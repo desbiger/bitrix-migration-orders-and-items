@@ -1,5 +1,5 @@
 {
-  "name": "bitrix-migrate-products-and-orders",
+  "name": "desbiger/bitrix-migration-orders-and-items",
   "description": "migration all products, orders, users between two bitrix",
   "require": {
     "php": "^5.3.3 || ^7.0"
