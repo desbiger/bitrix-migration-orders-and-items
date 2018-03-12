@@ -1,4 +1,9 @@
 {
+  "name": "bitrix-migrate-products-and-orders",
+  "description": "migration all products, orders, users between two bitrix",
+  "require": {
+    "php": "^5.3.3 || ^7.0"
+  },
   "autoload": {
     "psr-4": {
       "BitrixMigration\\": ""
