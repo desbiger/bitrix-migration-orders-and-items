@@ -2,15 +2,11 @@
   "name": "desbiger/bitrix-migration-orders-and-items",
   "description": "migration all products, orders, users between two bitrix",
   "require": {
-    "php": "^5.3.3 || ^7.0",
-    "symfony/var-dumper": "^3.0"
+    "php": "^5.3.3 || ^7.0"
   },
   "autoload": {
     "psr-4": {
       "BitrixMigration\\": ""
-    },
-    "files": [
-      "bootstrap.php"
-    ]
+    }
   }
 }
