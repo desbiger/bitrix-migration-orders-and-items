@@ -63,9 +63,10 @@ class ImportProducts {
         $items = [];
         $list = \CIblockElement::getList([], ['IBLOCK_ID' => $this->iblock_id]);
         while ($item = $list->GetNextElement()) {
+
             $fields = $item->getFields();
-            $props = $item->getProperties();
-            $fields['PROPS'] = $props;
+//            $props = $item->getProperties();
+//            $fields['PROPS'] = $props;
 
             if ($fields['IBLOCK_SECTION_ID']) {
 
