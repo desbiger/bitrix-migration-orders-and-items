@@ -1,7 +1,7 @@
 <?php
 
 
-namespace BitrixMigration;
+namespace BitrixMigration\Export;
 
 
 class ExportPrices {

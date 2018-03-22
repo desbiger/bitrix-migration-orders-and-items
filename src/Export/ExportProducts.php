@@ -1,6 +1,9 @@
 <?php
 
-namespace BitrixMigration;
+namespace BitrixMigration\Export;
+
+use BitrixMigration\BitrixMigrationHelper;
+use BitrixMigration\CLI;
 
 class ExportProducts {
     use BitrixMigrationHelper;
@@ -147,6 +150,9 @@ class ExportProducts {
 
             $fields = $this->arrayOnly($item->getFields(), $this->fields);
             $props = $item->getProperties();
+
+            $this->dumpPropertyFiles($props);
+
             $fields['PROPS'] = $props;
             $fields['PRICES'] = $this->CatalogPrices->getPrices($fields['ID']);
             $fields['OFFERS'] = $this->getOffers($fields['ID']);
@@ -176,10 +182,7 @@ class ExportProducts {
     {
         foreach ($this->files_keys as $key) {
             $ID = $fields[$key];
-            $filePath = \CFIle::GetPath($ID);
-            if ($filePath) {
-                $this->files[$ID] = $filePath;
-            }
+            $this->dumpFileByID($ID);
         }
     }
 
@@ -234,6 +237,33 @@ class ExportProducts {
         }
 
         return $res;
+    }
+
+    public function dumpPropertyFiles($properties)
+    {
+        foreach ($properties as $property) {
+            if ($property['PROPERTY_TYPE'] == 'F') {
+                if (is_array($property['VALUE'])) {
+                    foreach ($property['VALUE'] as $id) {
+                        $this->dumpFileByID($id);
+                    }
+                    continue;
+                }
+                if ($property['VALUE'])
+                    $this->dumpFileByID($property['VALUE']);
+            }
+        }
+    }
+
+    /**
+     * @param $ID
+     */
+    private function dumpFileByID($ID)
+    {
+        $filePath = \CFIle::GetPath($ID);
+        if ($filePath) {
+            $this->files[$ID] = $filePath;
+        }
     }
 
 

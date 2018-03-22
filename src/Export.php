@@ -3,33 +3,55 @@
 namespace BitrixMigration;
 
 
+use BitrixMigration\Export\ExportOrders;
+use BitrixMigration\Export\ExportProducts;
+use BitrixMigration\Export\ExportUsers;
+
 class Export {
     public $sections_dir = 'sections';
+    public $ExportOrders;
     protected $products_dir_name = 'products';
 
     public $allFiles = [];
     public $filesPath;
 
     protected $products;
-    private $import_folder_path;
+    private $export_folder_path;
 
     /**
      * @param $product_iblock_id
      *
      * @return Export
      */
-    static function init($product_iblock_id, $import_folder_path)
+    static function init($product_iblock_id, $export_folder_path)
     {
-        return new self($product_iblock_id, $import_folder_path);
+        return new self($product_iblock_id, $export_folder_path);
     }
 
-    public function __construct($products_iblock_id, $import_folder_path)
-    {
-        $this->products = new ExportProducts($products_iblock_id);
-        $this->import_folder_path = $import_folder_path;
 
-        $this->filesPath = $this->import_folder_path . '/files';
+    /**
+     * Export constructor.
+     *
+     * @param $products_iblock_id
+     * @param $export_folder_path
+     */
+    public function __construct($products_iblock_id, $export_folder_path)
+    {
+        $this->ExportOrders = new ExportOrders();
+        $this->products = new ExportProducts($products_iblock_id);
+        $this->users = new ExportUsers();
+        $this->export_folder_path = $export_folder_path;
+
+        $this->filesPath = $this->export_folder_path . '/files';
         mkdir($this->filesPath);
+    }
+
+    /**
+     * импорт свойств, товаров, пользователей, заказов, разделов
+     */
+    public function export()
+    {
+        $this->dumpProperties()->dumpProducts()->dumpUsers()->dumpOrders()->dumpSections();
     }
 
 
@@ -39,7 +61,8 @@ class Export {
      */
     public function dumpProperties()
     {
-        file_put_contents($this->import_folder_path.'/properties.json', json_encode($this->products->IblockProperties));
+        file_put_contents($this->export_folder_path . '/properties.json', json_encode($this->products->IblockProperties));
+
         return $this;
     }
 
@@ -49,7 +72,7 @@ class Export {
      */
     public function dumpProducts($items_per_file = 1000)
     {
-        $productsPath = $this->import_folder_path . '/' . $this->products_dir_name;
+        $productsPath = $this->export_folder_path . '/' . $this->products_dir_name;
         $allFiles = [];
         mkdir($productsPath);
 
@@ -68,12 +91,41 @@ class Export {
     }
 
     /**
+     * @return $this
+     */
+    public function dumpUsers()
+    {
+        $users = $this->users->getAllUsers();
+        file_put_contents($this->export_folder_path . '/users.json', json_encode($users));
+
+        return $this;
+    }
+
+    /**
+     * Скидываем все заказы в формате User_id => orders
+     *
+     * @return $this
+     */
+    public function dumpOrders()
+    {
+        $res = [];
+        foreach ($this->users->getAllUsers() as $user) {
+            $res[$user['ID']] = $this->ExportOrders->getUserOrders($user['ID']);
+        }
+        $res = json_encode($res);
+        file_put_contents($this->export_folder_path . '/orders.json', $res);
+
+        return $this;
+    }
+
+
+    /**
      * Выгружаем разделы заданного инфоблока
      */
     public function dumpSections($items_per_file = 1000)
     {
 
-        $sectionsPath = $this->import_folder_path . '/' . $this->sections_dir;
+        $sectionsPath = $this->export_folder_path . '/' . $this->sections_dir;
         mkdir($sectionsPath);
 
 

@@ -26,17 +26,7 @@ class ImportOrders {
         return $orders;
     }
 
-    /**
-     * Список свойств заказа
-     *
-     * @param $id
-     *
-     * @return mixed
-     */
-    public function orderProps($id)
-    {
-        return \CSaleOrderProps::GetByID($id);
-    }
+
 
     /**
      * Список товаров заказа
