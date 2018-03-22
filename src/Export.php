@@ -134,7 +134,6 @@ class Export {
 
 
         $this->products->getAllSections(function ($result, $iterarion, $files) use ($sectionsPath) {
-
             file_put_contents($sectionsPath . "/sections_$iterarion.json", json_encode($result));
             $this->copyFiles($files);
 

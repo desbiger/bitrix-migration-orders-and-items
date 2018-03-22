@@ -110,19 +110,16 @@ class ExportProducts {
      */
     protected function getSection($section_id = null)
     {
-        $sections = [];
         $list = \CIBlockSection::GetList([], ['IBLOCK_ID' => $this->iblock_id, 'SECTION_ID' => $section_id]);
 
-        while ($section = $list->Fetch()) {
+        $sections = $this->FetchAll($list, function ($section) {
             $this->dumpFiles($section);
             $subsections = $this->getSection($section['ID']);
 
             if (count($subsections))
                 $section['SUBSECTIONS'] = $subsections;
-
-
-            $sections[] = $section;
-        }
+            return $section;
+        });
 
         return count($sections) ? $sections : false;
     }
