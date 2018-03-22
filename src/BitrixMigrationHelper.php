@@ -22,4 +22,24 @@ trait BitrixMigrationHelper {
 
         return $fields;
     }
+
+    /**
+     * @param \CDBResult $result
+     *
+     * @return array
+     */
+    public function FetchAll(\CDBResult $result, callable $callback = null)
+    {
+        $res = [];
+        while ($t = $result->Fetch()) {
+            if ($callback) {
+                $res[] = $callback($t);
+            } else {
+                $res[] = $t;
+            }
+        }
+
+        return $res;
+    }
+
 }

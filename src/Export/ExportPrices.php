@@ -4,7 +4,10 @@
 namespace BitrixMigration\Export;
 
 
+use BitrixMigration\BitrixMigrationHelper;
+
 class ExportPrices {
+    use BitrixMigrationHelper;
     public $prices;
     private $iblock_id;
 
@@ -41,13 +44,10 @@ class ExportPrices {
      */
     public function getPrices($elementId)
     {
-        $res = [];
         $itemPrices = \CPrice::GetList([], ['PRODUCT_ID' => $elementId]);
-        while ($price = $itemPrices->Fetch()) {
-            $res[] = $price;
-        }
 
-        return $res;
+        return $this->FetchAll($itemPrices);
+
     }
 
     /**

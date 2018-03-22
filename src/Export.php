@@ -3,6 +3,7 @@
 namespace BitrixMigration;
 
 
+use BitrixMigration\Export\ExportDelivery;
 use BitrixMigration\Export\ExportOrders;
 use BitrixMigration\Export\ExportProducts;
 use BitrixMigration\Export\ExportUsers;
@@ -17,6 +18,9 @@ class Export {
 
     protected $products;
     private $export_folder_path;
+    public $deliveryJson = '/delivery.json';
+    public $allFilesJson = '/allFiles.json';
+    public $ordersJson = '/orders.json';
 
     /**
      * @param $product_iblock_id
@@ -113,7 +117,7 @@ class Export {
             $res[$user['ID']] = $this->ExportOrders->getUserOrders($user['ID']);
         }
         $res = json_encode($res);
-        file_put_contents($this->export_folder_path . '/orders.json', $res);
+        file_put_contents($this->export_folder_path . $this->ordersJson, $res);
 
         return $this;
     }
@@ -159,7 +163,7 @@ class Export {
     protected function dumpFilesList()
     {
 
-        file_put_contents($this->filesPath . '/allFiles.json', json_encode($this->allFiles));
+        file_put_contents($this->filesPath . $this->allFilesJson, json_encode($this->allFiles));
     }
 
     /**
@@ -175,6 +179,24 @@ class Export {
             copy($_SERVER['DOCUMENT_ROOT'] . $file, $this->filesPath . $file);
         }
         $this->allFiles = $this->allFiles + $files;
+    }
+
+
+    /**
+     * Список всех дооставок
+     *
+     * @return array
+     */
+    public function dumpDelivery()
+    {
+        $deliveryExporter = new ExportDelivery();
+
+        $delivery = $deliveryExporter->getAll(function ($file) {
+            $this->copyFiles($file);
+        });
+        $this->dumpFilesList();
+
+        file_put_contents($this->export_folder_path . $this->deliveryJson, json_encode($delivery));
     }
 
 }
