@@ -4,10 +4,16 @@
 namespace BitrixMigration;
 
 
+use BitrixMigration\Import\ImportSections;
 use BitrixMigration\Import\ImportUsers;
 
 class Import {
-    use JsonReader;
+    public $iblock_id = 5;
+    use JsonReader, BitrixMigrationHelper;
+    /**
+     * @var ImportSections
+     */
+    public $sectionImportResult;
 
     /**
      * @param $import_path
@@ -43,7 +49,8 @@ class Import {
 
     public function iblockSections()
     {
-
+        $sections = $this->read('sections/sections_1');
+        $this->sectionImportResult = (new Import\ImportSections($sections, $this->iblock_id))->import();
     }
 
     public function iblockItems()
