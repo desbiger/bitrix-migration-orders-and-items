@@ -23,9 +23,9 @@ class Import {
      *
      * @return Import
      */
-    static function init($import_path,$iblock_id)
+    static function init($import_path, $iblock_id)
     {
-        return new self($import_path,$iblock_id);
+        return new self($import_path, $iblock_id);
     }
 
     /**
@@ -33,7 +33,7 @@ class Import {
      *
      * @param $import_path
      */
-    public function __construct($import_path,$iblock_id)
+    public function __construct($import_path, $iblock_id)
     {
         $this->import_path = $import_path;
         $this->iblock_id = $iblock_id;
@@ -52,7 +52,8 @@ class Import {
     public function orders()
     {
         $orders = $this->read('orders');
-        (new ImportOrders($this->iblock_id))->import($orders);
+        $users = $this->read('users');
+        (new ImportOrders($this->iblock_id))->import($orders, $users);
     }
 
     public function iblockSections()

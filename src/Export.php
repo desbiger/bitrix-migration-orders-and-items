@@ -5,6 +5,7 @@ namespace BitrixMigration;
 
 use BitrixMigration\Export\ExportDelivery;
 use BitrixMigration\Export\ExportOrders;
+use BitrixMigration\Export\ExportPersonType;
 use BitrixMigration\Export\ExportProducts;
 use BitrixMigration\Export\ExportUsers;
 
@@ -196,6 +197,12 @@ class Export {
         $this->dumpFilesList();
 
         file_put_contents($this->export_folder_path . $this->deliveryJson, json_encode($delivery));
+    }
+
+    public function dumpPersonType()
+    {
+        $PersonTypeExport = ExportPersonType::init();
+        $PersonTypeExport->export();
     }
 
 }

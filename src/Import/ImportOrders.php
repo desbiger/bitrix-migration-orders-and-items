@@ -10,6 +10,7 @@ use BitrixMigration\JsonReader;
 class ImportOrders {
     public $orders;
     public $importProducts;
+    public $newUserIDS;
     use BitrixMigrationHelper, JsonReader;
 
     private $catalog_iblock_id;
@@ -24,12 +25,19 @@ class ImportOrders {
     {
         \CModule::IncludeModule('catalog');
         \CModule::IncludeModule('sale');
+
         $this->catalog_iblock_id = $catalog_iblock_id;
         $this->importProducts = new ImportProducts($catalog_iblock_id);
     }
 
-    public function import($orders)
+    /**
+     * @param $orders
+     * @param $users
+     */
+    public function import($orders, $users)
     {
+        $this->newUserIDS = ImportUsers::init($users)->import()->ids;
+
         foreach ($orders as $user => $user_orders) {
             if (count($user_orders)) {
                 $this->createOrders($user_orders);
@@ -53,9 +61,10 @@ class ImportOrders {
      */
     private function updateOrderData(&$order)
     {
-
+        $order['USER_ID'] = $this->newUserIDS[$order['USER_ID']];
         foreach ($order['PRODUCTS'] as &$product) {
             if (count($product)) {
+
                 $product['PRODUCT_ID'] = (new ExportProducts($this->catalog_iblock_id))->getProductIdByXMLID($product['PRODUCT_XML_ID']);
                 $product['PRODUCT_PRICE_ID'] = $this->importProducts->getProductPriceID($product['PRODUCT_XML_ID'], $product['PRICE']);
             }
