@@ -118,6 +118,7 @@ class ExportProducts {
 
             if (count($subsections))
                 $section['SUBSECTIONS'] = $subsections;
+
             return $section;
         });
 
@@ -261,6 +262,19 @@ class ExportProducts {
         if ($filePath) {
             $this->files[$ID] = $filePath;
         }
+    }
+
+    /**
+     * @param $PRODUCT_XML_ID
+     *
+     * @return mixed
+     */
+    public function getProductIdByXMLID($PRODUCT_XML_ID)
+    {
+        return \CIBlockElement::GetList([], [
+            'IBLOCK_ID' => $this->iblock_id,
+            'XML_ID'    => $PRODUCT_XML_ID
+        ])->Fetch()['ID'];
     }
 
 

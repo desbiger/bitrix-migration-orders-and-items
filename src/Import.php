@@ -4,6 +4,7 @@
 namespace BitrixMigration;
 
 
+use BitrixMigration\Import\ImportOrders;
 use BitrixMigration\Import\ImportSections;
 use BitrixMigration\Import\ImportUsers;
 
@@ -18,11 +19,13 @@ class Import {
     /**
      * @param $import_path
      *
+     * @param $iblock_id
+     *
      * @return Import
      */
-    static function init($import_path)
+    static function init($import_path,$iblock_id)
     {
-        return new self($import_path);
+        return new self($import_path,$iblock_id);
     }
 
     /**
@@ -30,9 +33,10 @@ class Import {
      *
      * @param $import_path
      */
-    public function __construct($import_path)
+    public function __construct($import_path,$iblock_id)
     {
         $this->import_path = $import_path;
+        $this->iblock_id = $iblock_id;
     }
 
     public function users()
@@ -42,9 +46,13 @@ class Import {
         ImportUsers::init($users)->import();
     }
 
+    /**
+     *
+     */
     public function orders()
     {
-
+        $orders = $this->read('orders');
+        (new ImportOrders($this->iblock_id))->import($orders);
     }
 
     public function iblockSections()

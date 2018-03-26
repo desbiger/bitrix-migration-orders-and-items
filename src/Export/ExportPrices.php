@@ -42,9 +42,12 @@ class ExportPrices {
      *
      * @return mixed
      */
-    public function getPrices($elementId)
+    public function getPrices($elementId, $filter = [])
     {
-        $itemPrices = \CPrice::GetList([], ['PRODUCT_ID' => $elementId]);
+        $iFilter = ['PRODUCT_ID' => $elementId] + $filter;
+
+        $itemPrices = \CPrice::GetList([], $iFilter);
+
 
         return $this->FetchAll($itemPrices);
 
