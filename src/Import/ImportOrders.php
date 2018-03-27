@@ -13,6 +13,7 @@ class ImportOrders {
     public $newUserIDS;
     public $newPersonsTypeIDS;
     public $newOrderPropsIDS;
+    public $newPaySystemIDS;
     use BitrixMigrationHelper, JsonReader;
 
     private $catalog_iblock_id;
@@ -37,13 +38,15 @@ class ImportOrders {
      * @param $orders
      * @param $users
      */
-    public function import($orders, $users, $persons)
+    public function import($orders, $users, $persons, $paySystem, $delivery)
     {
-        $this->newUserIDS = ImportUsers::init($users)->import()->ids;
         $importPersonType = ImportPersonType::init($persons)->import();
+        $ImportPaySystem = ImportPaySystem::init($paySystem, $this->import_path, $importPersonType->NewIDS)->import();
 
+        $this->newUserIDS = ImportUsers::init($users)->import()->ids;
         $this->newPersonsTypeIDS = $importPersonType->NewIDS;
         $this->newOrderPropsIDS = $importPersonType->newOrderPropsIDS;
+        $this->newPaySystemIDS = $ImportPaySystem->newPaySystemIDS;
 
 
         foreach ($orders as $user => $user_orders) {
@@ -70,6 +73,9 @@ class ImportOrders {
     private function updateOrderData(&$order)
     {
         $order['USER_ID'] = $this->newUserIDS[$order['USER_ID']];
+        $order['EMP_ALLOW_DELIVERY_ID'] = $this->newUserIDS[$order['EMP_ALLOW_DELIVERY_ID']];
+        $order['EMP_PAYED_ID'] = $this->newUserIDS[$order['EMP_PAYED_ID']];
+        $order['PAY_SYSTEM_ID'] = $this->newPaySystemIDS[$order['PAY_SYSTEM_ID']];
         foreach ($order['PRODUCTS'] as &$product) {
             if (count($product)) {
 
@@ -86,11 +92,25 @@ class ImportOrders {
     {
         global $APPLICATION;
         $orderObject = new \CSaleOrder();
+        unset($order['ID']);
         $id = $orderObject->Add($order);
+        $this->createOrderBasket($order['PRODUCTS'], $id);
         if ($ex = $APPLICATION->GetException())
             echo $ex->GetString() . ' ' . $id;
 
 
+    }
+
+    /**
+     * @param $PRODUCTS
+     * @param $order_id
+     */
+    private function createOrderBasket($PRODUCTS, $order_id)
+    {
+        foreach ($PRODUCTS as $product) {
+            $product['ORDER_ID'] = $order_id;
+            \CSaleBasket::Add($product);
+        }
     }
 
 

@@ -48,8 +48,10 @@ class Import {
         $orders = $this->read('orders');
         $users = $this->read('users');
         $persons = $this->read('personType');
+        $paySystems = $this->read('paySystem');
+        $delivery = $this->read('delivery');
 
-        (new ImportOrders($this->iblock_id))->import($orders, $users, $persons);
+        (new ImportOrders($this->iblock_id))->import($orders, $users, $persons, $paySystems, $delivery);
     }
 
     public function iblockSections()
@@ -57,7 +59,6 @@ class Import {
         $sections = $this->read('sections/sections_1');
         $this->sectionImportResult = (new Import\ImportSections($sections, $this->iblock_id))->import();
     }
-
 
 
 }
