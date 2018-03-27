@@ -36,7 +36,10 @@ class ImportUsers {
         foreach ($this->list as $user) {
             $newUser = $userObject->Add($user);
             if (!$newUser) {
-                $newUser = $userObject->getList([], ['EMAIL' => $user['EMAIL']])->Fetch()['ID'];
+                $filter = ['EMAIL' => $user['EMAIL']];
+                $order = ['sort'=>'asc'];
+                $tmp = 'sort';
+                $newUser = \CUser::GetList($order,$tmp, $filter)->Fetch()['ID'];
             }
             $this->ids[$user['ID']] = $newUser;
         }

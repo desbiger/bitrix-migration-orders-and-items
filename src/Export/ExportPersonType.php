@@ -22,8 +22,7 @@ class ExportPersonType {
 
     public function export()
     {
-        $all = $this->getList();
-        dd($all);
+        return $this->getList();
     }
 
     /**
@@ -31,7 +30,10 @@ class ExportPersonType {
      */
     private function getList()
     {
-        return $this->FetchAll(\CSalePersonType::GetList([], ['LID' => 's1']));
+        return $this->FetchAll(\CSalePersonType::GetList([], ['LID' => 's1']), function ($item) {
+            $item['PROPS'] = $this->FetchAll(\CSaleOrderProps::GetList([], ['PERSON_TYPE_ID' => $item['ID']]));
+            return $item;
+        });
     }
 
 

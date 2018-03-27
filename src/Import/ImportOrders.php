@@ -11,6 +11,8 @@ class ImportOrders {
     public $orders;
     public $importProducts;
     public $newUserIDS;
+    public $newPersonsTypeIDS;
+    public $newOrderPropsIDS;
     use BitrixMigrationHelper, JsonReader;
 
     private $catalog_iblock_id;
@@ -28,15 +30,21 @@ class ImportOrders {
 
         $this->catalog_iblock_id = $catalog_iblock_id;
         $this->importProducts = new ImportProducts($catalog_iblock_id);
+
     }
 
     /**
      * @param $orders
      * @param $users
      */
-    public function import($orders, $users)
+    public function import($orders, $users, $persons)
     {
         $this->newUserIDS = ImportUsers::init($users)->import()->ids;
+        $importPersonType = ImportPersonType::init($persons)->import();
+
+        $this->newPersonsTypeIDS = $importPersonType->NewIDS;
+        $this->newOrderPropsIDS = $importPersonType->newOrderPropsIDS;
+
 
         foreach ($orders as $user => $user_orders) {
             if (count($user_orders)) {

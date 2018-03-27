@@ -5,6 +5,7 @@ namespace BitrixMigration;
 
 use BitrixMigration\Export\ExportDelivery;
 use BitrixMigration\Export\ExportOrders;
+use BitrixMigration\Export\ExportPaySystems;
 use BitrixMigration\Export\ExportPersonType;
 use BitrixMigration\Export\ExportProducts;
 use BitrixMigration\Export\ExportUsers;
@@ -12,6 +13,7 @@ use BitrixMigration\Export\ExportUsers;
 class Export {
     public $sections_dir = 'sections';
     public $ExportOrders;
+    public $paySystem = '/paySystem.json';
     protected $products_dir_name = 'products';
 
     public $allFiles = [];
@@ -20,6 +22,7 @@ class Export {
     protected $products;
     private $export_folder_path;
     public $deliveryJson = '/delivery.json';
+    public $personType = '/personType.json';
     public $allFilesJson = '/allFiles.json';
     public $ordersJson = '/orders.json';
 
@@ -199,10 +202,40 @@ class Export {
         file_put_contents($this->export_folder_path . $this->deliveryJson, json_encode($delivery));
     }
 
+    /**
+     *
+     */
+    public function dumpPaySystems()
+    {
+        $paySystems = new ExportPaySystems();
+
+        $list = $paySystems->getAll();
+
+        $files = [];
+        foreach ($list as $ps) {
+            if ($ps['ACTION']['LOGOTIP'])
+                $files[] = $ps['ACTION']['LOGOTIP'];
+        }
+
+        if ($files) {
+            $this->copyFiles($files);
+            $this->dumpFilesList();
+        }
+
+
+        file_put_contents($this->export_folder_path . $this->paySystem, json_encode($list));
+    }
+
+
+    /**
+     *
+     */
     public function dumpPersonType()
     {
         $PersonTypeExport = ExportPersonType::init();
-        $PersonTypeExport->export();
+        $list = $PersonTypeExport->export();
+
+        file_put_contents($this->export_folder_path . $this->personType, json_encode($list));
     }
 
 }

@@ -39,12 +39,6 @@ class Import {
         $this->iblock_id = $iblock_id;
     }
 
-    public function users()
-    {
-        $users = $this->read('users');
-
-        ImportUsers::init($users)->import();
-    }
 
     /**
      *
@@ -53,7 +47,9 @@ class Import {
     {
         $orders = $this->read('orders');
         $users = $this->read('users');
-        (new ImportOrders($this->iblock_id))->import($orders, $users);
+        $persons = $this->read('personType');
+
+        (new ImportOrders($this->iblock_id))->import($orders, $users, $persons);
     }
 
     public function iblockSections()
@@ -62,10 +58,6 @@ class Import {
         $this->sectionImportResult = (new Import\ImportSections($sections, $this->iblock_id))->import();
     }
 
-    public function iblockItems()
-    {
-
-    }
 
 
 }
