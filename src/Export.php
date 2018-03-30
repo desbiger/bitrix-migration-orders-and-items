@@ -2,7 +2,7 @@
 
 namespace BitrixMigration;
 
-
+//test
 use BitrixMigration\Export\ExportDelivery;
 use BitrixMigration\Export\ExportOrders;
 use BitrixMigration\Export\ExportPaySystems;
@@ -80,6 +80,7 @@ class Export {
      */
     public function dumpProducts($items_per_file = 1000)
     {
+        dd(123);
         $productsPath = $this->export_folder_path . '/' . $this->products_dir_name;
         $allFiles = [];
         mkdir($productsPath);
