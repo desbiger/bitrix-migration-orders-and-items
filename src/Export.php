@@ -26,6 +26,7 @@ class Export {
     public $personType = '/personType.json';
     public $allFilesJson = '/allFiles.json';
     public $ordersJson = '/orders.json';
+    private $products_iblock_id;
 
     /**
      * @param $product_iblock_id
@@ -53,6 +54,7 @@ class Export {
 
         $this->filesPath = $this->export_folder_path . '/files';
         mkdir($this->filesPath);
+        $this->products_iblock_id = $products_iblock_id;
     }
 
     /**
@@ -105,10 +107,14 @@ class Export {
      *
      * @return $this
      */
-    public function dumpIblock($iblock_id)
+    public function dumpIblock()
     {
-        $Exporter = new ExportIblock($iblock_id);
-        file_put_contents($this->export_folder_path . '/iblock.json',json_encode($Exporter));
+        $Exporter = new ExportIblock($this->products_iblock_id);
+
+        file_put_contents($this->export_folder_path . '/iblock.json', json_encode($Exporter));
+
+        $this->copyFiles($Exporter->getFiles());
+
         return $this;
     }
 

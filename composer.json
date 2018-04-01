@@ -9,7 +9,8 @@
   },
   "autoload": {
     "psr-4": {
-      "BitrixMigration\\": "src"
+      "BitrixMigration\\": "src",
+      "Sprint\\": "Sprint"
     }
   }
 }

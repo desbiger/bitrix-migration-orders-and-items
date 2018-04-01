@@ -4,6 +4,7 @@
 namespace BitrixMigration;
 
 
+use BitrixMigration\Import\ImportIblock;
 use BitrixMigration\Import\ImportOrders;
 use BitrixMigration\Import\ImportSections;
 use BitrixMigration\Import\ImportUsers;
@@ -58,6 +59,12 @@ class Import {
     {
         $sections = $this->read('sections/sections_1');
         $this->sectionImportResult = (new Import\ImportSections($sections, $this->iblock_id))->import();
+    }
+
+    public function iblock()
+    {
+        $iblock = $this->read('iblock');
+        new ImportIblock($iblock, $this->import_path);
     }
 
 
