@@ -4,6 +4,7 @@ namespace BitrixMigration;
 
 //test
 use BitrixMigration\Export\ExportDelivery;
+use BitrixMigration\Export\ExportIblock;
 use BitrixMigration\Export\ExportOrders;
 use BitrixMigration\Export\ExportPaySystems;
 use BitrixMigration\Export\ExportPersonType;
@@ -98,6 +99,19 @@ class Export {
 
         return $this;
     }
+
+    /**
+     * @param $iblock_id
+     *
+     * @return $this
+     */
+    public function dumpIblock($iblock_id)
+    {
+        $Exporter = new ExportIblock($iblock_id);
+        file_put_contents($this->export_folder_path . '/iblock.json',json_encode($Exporter));
+        return $this;
+    }
+
 
     /**
      * @return $this
