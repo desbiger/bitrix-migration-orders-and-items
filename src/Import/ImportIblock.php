@@ -71,6 +71,11 @@ class ImportIblock {
             if ($property['USER_TYPE_SETTINGS'])
                 $this->createHiloadBlock($property);
 
+            //TODO поправить костыль, продумать универсальный способ
+            if($property['LINK_IBLOCK_ID'] == 6)
+                $property['LINK_IBLOCK_ID'] = $this->newIblockID;
+
+
             $this->newPropertyIDs[$property['ID']] = $this->helper->Iblock()->addPropertyIfNotExists($this->newIblockID, $property);
         }
     }

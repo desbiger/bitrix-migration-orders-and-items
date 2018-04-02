@@ -22,6 +22,7 @@ class ImportProducts {
     private $import_path;
 
     public $newIds;
+    protected $PropertyLinkedItems;
 
     public function __construct(ImportIblock $newIblock, $import_path)
     {
@@ -186,6 +187,12 @@ class ImportProducts {
             case "L":
                 return $this->ListProperty($item);
 
+                break;
+
+            case "E":
+                $this->PropertyLinkedItems[] = $item['VALUE'];
+
+                return null;
                 break;
         }
     }
