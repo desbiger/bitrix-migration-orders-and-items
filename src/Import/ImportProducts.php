@@ -21,6 +21,8 @@ class ImportProducts {
     private $newIblock;
     private $import_path;
 
+    public $newIds;
+
     public function __construct(ImportIblock $newIblock, $import_path)
     {
         $this->import_path = $import_path;
@@ -102,7 +104,7 @@ class ImportProducts {
     private function createElements($file)
     {
         foreach ($file as $i => $Element) {
-            CLI::show_status($i+1, count($file));
+            CLI::show_status($i + 1, count($file));
             $this->newIds[$Element['ID']] = $this->createElementIfNotExist($Element);
         }
     }
@@ -118,14 +120,13 @@ class ImportProducts {
         if ($id = $this->exists($Element)) {
             return $id;
         }
-        $prices = $Element['PRICES'];
-        unset($Element['PRICES']);
+        $this->prices = $Element['PRICES'];
+        $this->offers = $Element['OFFERS'];
 
-        $offers = $Element['OFFERS'];
-        unset($Element['OFFERS']);
-        unset($Element['ID']);
+        $Element = collect($Element)->except(['PRICES', 'OFFERS'])->toArray();
 
         $Element = $this->correctFieldsValues($Element);
+
         $id = $element->add($Element);
         if (!$id) {
             echo $element->LAST_ERROR;
@@ -170,25 +171,35 @@ class ImportProducts {
     }
 
     /**
+     * @param $type
+     * @param $item
+     *
+     * @return array|null
+     */
+    public function PrepareByPropertyType($type, $item)
+    {
+        switch ($type) {
+            case "F":
+                return $this->FileProperty($item);
+
+                break;
+            case "L":
+                return $this->ListProperty($item);
+
+                break;
+        }
+    }
+
+
+    /**
      * @param $Element
      */
     private function convertProperties($Element)
     {
         $Element['PROPERTY_VALUES'] = array_map(function ($item) {
             if ($item['VALUE']) {
-                if ($item['PROPERTY_TYPE'] == 'F') {
-                    if (is_array($item['VALUE'])) {
-                        $res = [];
-                        foreach ($item['VALUE'] as $picture) {
-                            $res[] = $this->getFileArray($picture);
-                        }
-
-                        return $res;
-                    }
-
-
-                    return $this->getFileArray($item['VALUE']);
-                }
+                if ($res = $this->PrepareByPropertyType($item['PROPERTY_TYPE'], $item))
+                    return $res;
 
                 return $item['VALUE'];
             }
@@ -213,6 +224,58 @@ class ImportProducts {
         }
 
         return null;
+    }
+
+    /**
+     * @param $oldID
+     *
+     * @return mixed
+     */
+    public function getNewPropertyID($oldID)
+    {
+        return $this->newIblock->newPropertyIDs[$oldID];
+    }
+
+    /**
+     * @param $item
+     *
+     * @return mixed
+     */
+    public function getListPropertyIDByValue($item)
+    {
+        return \CIBlockProperty::GetPropertyEnum($this->getNewPropertyID($item['ID']), [], ['XML_ID' => $item['VALUE_XML_ID'][0]])
+                               ->Fetch();
+    }
+
+    /**
+     * @param $item
+     *
+     * @return array|null
+     */
+    public function FileProperty($item)
+    {
+        if (is_array($item['VALUE'])) {
+            $res = [];
+            foreach ($item['VALUE'] as $picture) {
+                $res[] = $this->getFileArray($picture);
+            }
+
+            return $res;
+        }
+
+        return $this->getFileArray($item['VALUE']);
+    }
+
+    /**
+     * @param $item
+     *
+     * @return mixed
+     */
+    public function ListProperty($item)
+    {
+        $propValue = $this->getListPropertyIDByValue($item);
+
+        return $propValue['ID'];
     }
 
 
