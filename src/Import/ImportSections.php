@@ -4,8 +4,15 @@
 namespace BitrixMigration\Import;
 
 
+use BitrixMigration\JsonReader;
+use Sprint\Migration\HelperManager;
+
 class ImportSections {
+    use JsonReader;
     public $xml_id;
+    public $newSectionIDS;
+    public $replacedFields;
+    public $SectionUserFields;
     /**
      * @var mixed
      */
@@ -17,11 +24,15 @@ class ImportSections {
      *
      * @param mixed $sections
      */
-    public function __construct($sections, $iblock_id)
+    public function __construct($importPath, $iblock_id)
     {
         $this->iblock_id = $iblock_id;
-        $this->sections = $this->updateSections($sections);
-        $this->getXmlID($this->sections);
+        $this->sections = $this->read($importPath . '/sections/sections_1');
+        $this->SectionUserFields = $this->read($importPath . '/sections_uf');
+
+        $this->replacedFields = [
+            'IBLOCK_ID' => $this->iblock_id,
+        ];
     }
 
     /**
@@ -29,12 +40,8 @@ class ImportSections {
      */
     public function import()
     {
-        foreach ($this->sections as $section) {
-            $id = $this->createSection($section);
-            if (count($section['SUBSECTIONS'])) {
-                $this->createSubsections($id, $section['SUBSECTIONS']);
-            }
-        }
+        $this->ImportSectionsUserFields();
+        $this->ImportSections();
 
         return $this;
     }
@@ -56,12 +63,28 @@ class ImportSections {
      *
      * @return mixed
      */
-    private function createSection($section)
+    private function createSectionIfNotExists($section)
     {
+        $replaces = null;
+
+        if ($section['IBLOCK_SECTION_ID']) {
+            $replaces['IBLOCK_SECTION_ID'] = $this->newSectionIDS[$section['IBLOCK_SECTION_ID']];
+        }
+
+        $section = $this->replaceFields($section, $replaces);
+
         $CIBlockSection = new \CIBlockSection;
+
+        if ($id = $this->sectionExists($section)) {
+            $this->newSectionIDS[$section['ID']] = $id;
+
+            return $id;
+        }
+
         if (!$id = $CIBlockSection->Add($section)) {
             echo($CIBlockSection->LAST_ERROR);
         }
+        $this->newSectionIDS[$section['ID']] = $id;
 
         return $id;
     }
@@ -70,47 +93,64 @@ class ImportSections {
      * @param $parent_id
      * @param $subsections
      */
-    private function createSubsections($parent_id, $subsections)
+    private function createSubsections($subsections)
     {
         foreach ($subsections as $section) {
-            $section['IBLOCK_SECTION_ID'] = $parent_id;
-            $id = $this->createSection($section);
+
+            $this->createSectionIfNotExists($section);
             if ($section['SUBSECTIONS']) {
-                $this->createSubsections($id, $section['SUBSECTIONS']);
+                $this->createSubsections($section['SUBSECTIONS']);
             }
         }
     }
 
     /**
-     * @param $sections
+     * @param $section
      *
      * @return mixed
      */
-    private function updateSections($sections)
+    private function sectionExists($section)
     {
-        $UpdatedSections = [];
-        foreach ($sections as &$section) {
-            $section['IBLOCK_ID'] = $this->iblock_id;
-            $section['IBLOCK_SECTION_ID'] = null;
-            if (count($section['SUBSECTIONS'])) {
-                $section['SUBSECTIONS'] = $this->updateSections($section['SUBSECTIONS']);
-            }
-            $UpdatedSections[] = $section;
-        }
-
-        return $UpdatedSections;
+        return \CIBlockSection::GetList([], [
+            'IBLOCK_ID' => $this->iblock_id,
+            'XML_ID'    => $section['XML_ID']
+        ])->Fetch()['ID'];
     }
 
     /**
-     * @param $sections
+     * @param $section
+     *
+     * @return array
      */
-    private function getXmlID($sections)
+    private function replaceFields($section, $replaces = null)
     {
-        foreach ($sections as $section) {
-            $this->xml_id[$section['ID']] = $section['XML_ID'];
+        $section = array_replace_recursive($section, $this->replacedFields);
+        if ($replaces) {
+            $section = array_replace_recursive($section, $replaces);
+        }
+
+        return $section;
+    }
+
+    private function ImportSections()
+    {
+        foreach ($this->sections as $section) {
+            $this->createSectionIfNotExists($section);
             if (count($section['SUBSECTIONS'])) {
-                $this->getXmlID($section['SUBSECTIONS']);
+                $this->createSubsections($section['SUBSECTIONS']);
             }
+        }
+    }
+
+    /**
+     *
+     */
+    private function ImportSectionsUserFields()
+    {
+        $helper = new HelperManager();
+        foreach ($this->SectionUserFields as $uf) {
+            $id = $uf['ENTITY_ID'] = "IBLOCK_{$this->iblock_id}_SECTION";
+            $helper->UserTypeEntity()->addUserTypeEntityIfNotExists($id, $uf['FIELD_NAME'], $uf);
         }
     }
 }

@@ -6,6 +6,7 @@ namespace BitrixMigration;
 
 use BitrixMigration\Import\ImportIblock;
 use BitrixMigration\Import\ImportOrders;
+use BitrixMigration\Import\ImportProducts;
 use BitrixMigration\Import\ImportSections;
 use BitrixMigration\Import\ImportUsers;
 
@@ -16,6 +17,7 @@ class Import {
      * @var ImportSections
      */
     public $sectionImportResult;
+    public $newIblock;
 
     /**
      * @param $import_path
@@ -55,16 +57,15 @@ class Import {
         (new ImportOrders($this->iblock_id))->import($orders, $users, $persons, $paySystems, $delivery);
     }
 
-    public function iblockSections()
-    {
-        $sections = $this->read('sections/sections_1');
-        $this->sectionImportResult = (new Import\ImportSections($sections, $this->iblock_id))->import();
-    }
-
+    /**
+     * Импорт инфоблока
+     */
     public function iblock()
     {
         $iblock = $this->read('iblock');
-        new ImportIblock($iblock, $this->import_path);
+        $this->newIblock = new ImportIblock($iblock, $this->import_path);
+
+        $importCatalog = new ImportProducts($this->newIblock, $this->import_path);
     }
 
 

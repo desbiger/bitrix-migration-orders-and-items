@@ -9,7 +9,9 @@ use BitrixMigration\Export\ExportOrders;
 use BitrixMigration\Export\ExportPaySystems;
 use BitrixMigration\Export\ExportPersonType;
 use BitrixMigration\Export\ExportProducts;
+use BitrixMigration\Export\ExportUserFields;
 use BitrixMigration\Export\ExportUsers;
+use Sprint\Migration\HelperManager;
 
 class Export {
     public $sections_dir = 'sections';
@@ -83,7 +85,6 @@ class Export {
      */
     public function dumpProducts($items_per_file = 1000)
     {
-        dd(123);
         $productsPath = $this->export_folder_path . '/' . $this->products_dir_name;
         $allFiles = [];
         mkdir($productsPath);
@@ -114,6 +115,10 @@ class Export {
         file_put_contents($this->export_folder_path . '/iblock.json', json_encode($Exporter));
 
         $this->copyFiles($Exporter->getFiles());
+
+        $this->dumpProducts();
+        $this->dumpSections();
+        $this->dumpSectionsUserFields();
 
         return $this;
     }
@@ -257,6 +262,16 @@ class Export {
         $list = $PersonTypeExport->export();
 
         file_put_contents($this->export_folder_path . $this->personType, json_encode($list));
+    }
+
+    /**
+     * Сохраняем пользовательские поля для разделов инфоблока
+     */
+    private function dumpSectionsUserFields()
+    {
+        $UFs = new ExportUserFields("IBLOCK_{$this->products_iblock_id}_SECTION");
+        $list = json_encode($UFs->getAll());
+        file_put_contents($this->export_folder_path . '/sections_uf.json',$list);
     }
 
 }

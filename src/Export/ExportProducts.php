@@ -110,7 +110,7 @@ class ExportProducts {
      */
     protected function getSection($section_id = null)
     {
-        $list = \CIBlockSection::GetList([], ['IBLOCK_ID' => $this->iblock_id, 'SECTION_ID' => $section_id]);
+        $list = \CIBlockSection::GetList([], ['IBLOCK_ID' => $this->iblock_id, 'SECTION_ID' => $section_id],null,['UF_*']);
 
         $sections = $this->FetchAll($list, function ($section) {
             $this->dumpFiles($section);
@@ -120,6 +120,7 @@ class ExportProducts {
                 $section['SUBSECTIONS'] = $subsections;
 
             return $section;
+
         });
 
         return count($sections) ? $sections : false;
@@ -158,12 +159,7 @@ class ExportProducts {
 
             $this->dumpFiles($fields);
 
-            if ($fields['IBLOCK_SECTION_ID']) {
-
-                $items['SECTIONS'][$fields['IBLOCK_SECTION_ID']][] = $fields;
-                continue;
-            }
-            $items['ROOT'][] = $fields;
+            $items[] = $fields;
         }
 
         $callback($items, $page, $this->files);
