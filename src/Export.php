@@ -8,6 +8,8 @@ use BitrixMigration\Export\ExportIblock;
 use BitrixMigration\Export\ExportOrders;
 use BitrixMigration\Export\ExportPaySystems;
 use BitrixMigration\Export\ExportPersonType;
+use BitrixMigration\Export\ExportPrices;
+use BitrixMigration\Export\ExportPriceType;
 use BitrixMigration\Export\ExportProducts;
 use BitrixMigration\Export\ExportUserFields;
 use BitrixMigration\Export\ExportUsers;
@@ -17,6 +19,7 @@ class Export {
     public $sections_dir = 'sections';
     public $ExportOrders;
     public $paySystem = '/paySystem.json';
+    public $prices;
     protected $products_dir_name = 'products';
 
     public $allFiles = [];
@@ -59,14 +62,6 @@ class Export {
         $this->products_iblock_id = $products_iblock_id;
     }
 
-    /**
-     * импорт свойств, товаров, пользователей, заказов, разделов
-     */
-    public function export()
-    {
-        $this->dumpProperties()->dumpProducts()->dumpUsers()->dumpOrders()->dumpSections();
-    }
-
 
     /**
      * Сохраняем все свойства инфоблока товаров
@@ -91,12 +86,20 @@ class Export {
 
 
         $this->products->getAllProducts(function ($result, $iterarion, $files) use ($productsPath, $allFiles) {
+            echo "\rdump Prices";
+
+            foreach ($result as $key => $item) {
+                CLI::show_status($key + 1, count($result));
+                $this->prices[$item['ID']] = (new ExportPrices($this->products_iblock_id))->getPrices($item['ID']);
+            }
+            $this->dumpPrices($iterarion);
 
             file_put_contents($productsPath . "/items_$iterarion.json", json_encode($result));
 
             $this->copyFiles($files);
 
         }, $items_per_file);
+
 
         $this->dumpFilesList();
 
@@ -108,17 +111,18 @@ class Export {
      *
      * @return $this
      */
-    public function dumpIblock()
+    public function export()
     {
-        $Exporter = new ExportIblock($this->products_iblock_id);
-
-        file_put_contents($this->export_folder_path . '/iblock.json', json_encode($Exporter));
-
-        $this->copyFiles($Exporter->getFiles());
-
+        $this->dumpPriceTypes();
+        $this->dumpIblock();
         $this->dumpProducts();
         $this->dumpSections();
         $this->dumpSectionsUserFields();
+        $this->dumpPaySystems();
+        $this->dumpPersonType();
+        $this->dumpDelivery();
+        $this->dumpUsers();
+        $this->dumpOrders();
 
         return $this;
     }
@@ -271,7 +275,58 @@ class Export {
     {
         $UFs = new ExportUserFields("IBLOCK_{$this->products_iblock_id}_SECTION");
         $list = json_encode($UFs->getAll());
-        file_put_contents($this->export_folder_path . '/sections_uf.json',$list);
+        file_put_contents($this->export_folder_path . '/sections_uf.json', $list);
+    }
+
+    /**
+     *
+     */
+    private function dumpPrices($iteration)
+    {
+
+        mkdir($this->export_folder_path . "/prices");
+        $path = $this->export_folder_path . "/prices/prices_$iteration.json";
+
+        file_put_contents($path, json_encode($this->prices));
+        $this->prices = [];
+    }
+
+    private function dumpIblock()
+    {
+        $Exporter = new ExportIblock($this->products_iblock_id);
+
+        file_put_contents($this->export_folder_path . '/iblock.json', json_encode($Exporter));
+
+        $this->copyFiles($Exporter->getFiles());
+    }
+
+    private function dumpPriceTypes()
+    {
+        $exporter = new ExportPriceType();
+        $this->saveFile('priceTypes.json', $exporter->getAll());
+    }
+
+    /**
+     * @param $fileName
+     * @param $data
+     */
+    private function saveFile($fileName, $data)
+    {
+        $this->makeDirs($fileName);
+
+        file_put_contents($this->export_folder_path . '/' . $fileName, json_encode($data));
+    }
+
+    /**
+     * @param $fileName
+     */
+    private function makeDirs($fileName)
+    {
+        if (count($dirs = explode("/", $fileName)) > 1) {
+            unset($dirs[count($dirs) - 1]);
+
+            mkdir($this->export_folder_path . '/' . implode("/", $dirs), 0777, true);
+        };
     }
 
 }

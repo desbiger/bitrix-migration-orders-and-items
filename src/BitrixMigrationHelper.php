@@ -42,4 +42,24 @@ trait BitrixMigrationHelper {
         return $res;
     }
 
+    /**
+     * @param $path
+     *
+     * @return array
+     */
+    public function scanDir($path, $without_extension = true)
+    {
+        $list = scandir($path);
+
+        $array_diff = array_diff($list, ['..', '.']);
+        if ($without_extension) {
+            $array_diff = array_map(function ($file) {
+                return str_replace(".json", "", $file);
+            }, $array_diff);
+        }
+
+        return $array_diff;
+    }
+
+
 }

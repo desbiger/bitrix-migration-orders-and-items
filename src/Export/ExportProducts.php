@@ -145,7 +145,9 @@ class ExportProducts {
 
 
             CLI::show_status($page * $chunks + $i, $count);
-            $this->NextStep($callback, $chunks, $i, $items, $page);
+
+            if(!$this->NextStep($callback, $chunks, $i, $items, $page))
+                return;
 
             $fields = $this->arrayOnly($item->getFields(), $this->fields);
             $props = $item->getProperties();
@@ -189,18 +191,20 @@ class ExportProducts {
      * @param $items
      * @param $page
      *
-     * @return array
+     * @return bool
      */
     protected function NextStep($callback, $chunks, &$i, &$items, &$page)
     {
         if ($i == $chunks) {
 
             $i = 0;
-            $callback($items, $page, $this->files);
+            if($callback($items, $page, $this->files) === false)
+                return false;
             $this->files = [];
             $page++;
             $items = [];
         }
+        return true;
     }
 
     /**

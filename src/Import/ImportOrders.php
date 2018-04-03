@@ -24,13 +24,13 @@ class ImportOrders {
      *
      * @param $catalog_iblock_id
      */
-    public function __construct($catalog_iblock_id)
+    public function __construct($catalog_iblock_id,ImportProducts $importProducts)
     {
         \CModule::IncludeModule('catalog');
         \CModule::IncludeModule('sale');
 
         $this->catalog_iblock_id = $catalog_iblock_id;
-        $this->importProducts = new ImportProducts($catalog_iblock_id);
+        $this->importProducts = $importProducts;
 
     }
 

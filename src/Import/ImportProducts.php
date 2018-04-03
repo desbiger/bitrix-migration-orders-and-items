@@ -38,6 +38,8 @@ class ImportProducts {
 
 
         $this->importCatalog();
+
+        $this->importPrices();
     }
 
     /**
@@ -250,8 +252,7 @@ class ImportProducts {
      */
     public function getListPropertyIDByValue($item)
     {
-        return \CIBlockProperty::GetPropertyEnum($this->getNewPropertyID($item['ID']), [], ['XML_ID' => $item['VALUE_XML_ID'][0]])
-                               ->Fetch();
+        return \CIBlockProperty::GetPropertyEnum($this->getNewPropertyID($item['ID']), [], ['XML_ID' => $item['VALUE_XML_ID'][0]])->Fetch();
     }
 
     /**
@@ -283,6 +284,15 @@ class ImportProducts {
         $propValue = $this->getListPropertyIDByValue($item);
 
         return $propValue['ID'];
+    }
+
+    /**
+     * Импортируем цены
+     */
+    private function importPrices()
+    {
+        $importer = new ImportPrices($this->import_path, $this->newIds);
+        $importer->import();
     }
 
 
