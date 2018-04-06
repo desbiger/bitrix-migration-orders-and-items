@@ -5,6 +5,7 @@ namespace BitrixMigration\Export;
 
 
 use BitrixMigration\BitrixMigrationHelper;
+use BitrixMigration\CLI;
 
 class ExportIblock {
     use BitrixMigrationHelper;
@@ -13,6 +14,9 @@ class ExportIblock {
     public $properties = [];
     public $settings;
     public $RelativeIblocks = [];
+    public $iblockHasSKU;
+    public $catalogSettings;
+    public $SKUIblockID;
     private $iblock_id;
 
     public function __construct($iblock_id)
@@ -21,6 +25,7 @@ class ExportIblock {
         $this->iblock_id = $iblock_id;
         $this->exportProperties();
         $this->getIblockSettings();
+        $this->isHasSKU();
     }
 
     /**
@@ -36,9 +41,14 @@ class ExportIblock {
      */
     private function exportProperties()
     {
-        foreach ($this->IblockProperties() as $property) {
-            $iblockProperty = new IblockProperty($property);
+        $iblockProperties = $this->IblockProperties();
 
+
+        $i = 1;
+        foreach ($iblockProperties as $property) {
+            CLI::show_status($i++, count($iblockProperties));
+
+            $iblockProperty = new IblockProperty($property);
             $this->properties[] = $iblockProperty->getProperty();
 
             if (is_array($iblockProperty->files))
@@ -85,6 +95,24 @@ class ExportIblock {
     public function getRelativeIblocks()
     {
         return $this->RelativeIblocks;
+    }
+
+    private function isHasSKU()
+    {
+        if ($this->iblockIsCatalog()) {
+            $this->iblockHasSKU = \CCatalogSKU::GetInfoByProductIBlock();
+        }
+    }
+
+    private function iblockIsCatalog()
+    {
+        if ($res = \CCatalog::GetByID($this->iblock_id)) {
+            $this->catalogSettings = $res;
+            $this->SKUIblockID = $res['PRODUCT_IBLOCK_ID'];
+            return true;
+        };
+
+        return false;
     }
 
 }

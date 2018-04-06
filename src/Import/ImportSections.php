@@ -4,10 +4,11 @@
 namespace BitrixMigration\Import;
 
 
+use BitrixMigration\Import\Contracts\Importer;
 use BitrixMigration\JsonReader;
 use Sprint\Migration\HelperManager;
 
-class ImportSections {
+class ImportSections implements Importer {
     use JsonReader;
     public $xml_id;
     public $newSectionIDS;
@@ -24,15 +25,9 @@ class ImportSections {
      *
      * @param mixed $sections
      */
-    public function __construct($importPath, $iblock_id)
+    public function __construct()
     {
-        $this->iblock_id = $iblock_id;
-        $this->sections = $this->read($importPath . '/sections/sections_1');
-        $this->SectionUserFields = $this->read($importPath . '/sections_uf');
 
-        $this->replacedFields = [
-            'IBLOCK_ID' => $this->iblock_id,
-        ];
     }
 
     /**
@@ -152,5 +147,38 @@ class ImportSections {
             $id = $uf['ENTITY_ID'] = "IBLOCK_{$this->iblock_id}_SECTION";
             $helper->UserTypeEntity()->addUserTypeEntityIfNotExists($id, $uf['FIELD_NAME'], $uf);
         }
+    }
+
+    public function execute()
+    {
+        $this->before();
+        $this->import();
+        $this->after();
+        Container::instance()->setSectionImportResult($this->newSectionIDS);
+    }
+
+    /**
+     * @return string
+     */
+    public function getImportName()
+    {
+        return 'Import IBlockSections';
+    }
+
+    public function before()
+    {
+        $this->iblock_id = Container::instance()->getNewIblock()->newIblockID;
+        $this->sections = $this->read('/sections/sections_1');
+        $this->SectionUserFields = $this->read('/sections_uf');
+
+        $this->replacedFields = [
+            'IBLOCK_ID' => $this->iblock_id,
+        ];
+    }
+
+    public function after()
+    {
+        $this->sections = [];
+        $this->SectionUserFields = [];
     }
 }

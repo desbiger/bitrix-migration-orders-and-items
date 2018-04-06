@@ -4,15 +4,14 @@
 namespace BitrixMigration;
 
 
-use BitrixMigration\Import\ImportIblock;
+use BitrixMigration\Import\Container;
+use BitrixMigration\Import\Contracts\Importer;
 use BitrixMigration\Import\ImportOrders;
-use BitrixMigration\Import\ImportPrices;
 use BitrixMigration\Import\ImportProducts;
 use BitrixMigration\Import\ImportSections;
-use BitrixMigration\Import\ImportUsers;
 
 class Import {
-    public $iblock_id = 5;
+
     use JsonReader, BitrixMigrationHelper;
     /**
      * @var ImportSections
@@ -23,6 +22,7 @@ class Import {
      * @var ImportProducts
      */
     public $importCatalog;
+    public $importers;
 
     /**
      * @param $import_path
@@ -31,9 +31,9 @@ class Import {
      *
      * @return Import
      */
-    static function init($import_path, $iblock_id)
+    static function init()
     {
-        return new self($import_path, $iblock_id);
+        return new self();
     }
 
     /**
@@ -41,10 +41,9 @@ class Import {
      *
      * @param $import_path
      */
-    public function __construct($import_path, $iblock_id)
+    public function __construct()
     {
-        $this->import_path = $import_path;
-        $this->iblock_id = $iblock_id;
+
     }
 
 
@@ -63,19 +62,24 @@ class Import {
     }
 
     /**
-     * Импорт инфоблока
+     * @param Importer $importer
+     *
+     * @return $this
      */
-    public function iblock()
+    public function register(Importer $importer)
     {
-        $iblock = $this->read('iblock');
-
-        $this->newIblock = new ImportIblock($iblock, $this->import_path);
-
-        $this->importCatalog = new ImportProducts($this->newIblock, $this->import_path);
-
-        $this->orders();
+        $this->importers[] = $importer;
+        return $this;
     }
 
+    public function import()
+    {
+        /** @var Importer $Importer */
+        foreach ($this->importers as $Importer) {
+            echo "\n" . $Importer->getImportName();
+            $Importer->execute();
+        }
+    }
 
 
 }

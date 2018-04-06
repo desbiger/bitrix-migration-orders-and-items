@@ -20,6 +20,7 @@ class Export {
     public $ExportOrders;
     public $paySystem = '/paySystem.json';
     public $prices;
+    public $filesDumps = 0;
     protected $products_dir_name = 'products';
 
     public $allFiles = [];
@@ -29,7 +30,7 @@ class Export {
     private $export_folder_path;
     public $deliveryJson = '/delivery.json';
     public $personType = '/personType.json';
-    public $allFilesJson = '/allFiles.json';
+    public $allFilesJson = '/allFiles';
     public $ordersJson = '/orders.json';
     private $products_iblock_id;
 
@@ -78,7 +79,7 @@ class Export {
     /**
      *  Выгружаем все элементы инфоблока с доп свойствами и картинками
      */
-    public function dumpProducts($items_per_file = 1000)
+    public function dumpProducts($items_per_file = 1000, $from)
     {
         $productsPath = $this->export_folder_path . '/' . $this->products_dir_name;
         $allFiles = [];
@@ -86,19 +87,20 @@ class Export {
 
 
         $this->products->getAllProducts(function ($result, $iterarion, $files) use ($productsPath, $allFiles) {
-            echo "\rdump Prices";
+
 
             foreach ($result as $key => $item) {
                 CLI::show_status($key + 1, count($result));
                 $this->prices[$item['ID']] = (new ExportPrices($this->products_iblock_id))->getPrices($item['ID']);
             }
+            //TODO сделать выгрузку  ком предложений $this->dumpOffers();
             $this->dumpPrices($iterarion);
 
             file_put_contents($productsPath . "/items_$iterarion.json", json_encode($result));
 
             $this->copyFiles($files);
 
-        }, $items_per_file);
+        }, $items_per_file, $from);
 
 
         $this->dumpFilesList();
@@ -111,18 +113,18 @@ class Export {
      *
      * @return $this
      */
-    public function export()
+    public function export($productsPerPage = 1000, $from = 0)
     {
-        $this->dumpPriceTypes();
+        //        $this->dumpPriceTypes();
         $this->dumpIblock();
-        $this->dumpProducts();
-        $this->dumpSections();
-        $this->dumpSectionsUserFields();
-        $this->dumpPaySystems();
-        $this->dumpPersonType();
-        $this->dumpDelivery();
-        $this->dumpUsers();
-        $this->dumpOrders();
+        //        $this->dumpProducts($productsPerPage, $from);
+        //        $this->dumpSections();
+        //        $this->dumpSectionsUserFields();
+        //        $this->dumpPaySystems();
+        //        $this->dumpPersonType();
+        //        $this->dumpDelivery();
+        //        $this->dumpUsers();
+        //        $this->dumpOrders();
 
         return $this;
     }
@@ -196,7 +198,9 @@ class Export {
     protected function dumpFilesList()
     {
 
-        file_put_contents($this->filesPath . $this->allFilesJson, json_encode($this->allFiles));
+        file_put_contents($this->filesPath . $this->allFilesJson . '_' . $this->filesDumps . '.json', json_encode($this->allFiles));
+        $this->filesDumps++;
+        $this->allFiles = [];
     }
 
     /**
@@ -206,12 +210,18 @@ class Export {
      */
     public function copyFiles($files)
     {
-        foreach ($files as $file) {
+        $i = 0;
+        $total = count($files);
+        $this->allFiles = $files;
+
+        foreach ($files as $id => $file) {
+            CLI::show_status($i++, $total, 30, ' | copy files');
             $newImgDir = $this->filesPath . dirname($file);
             mkdir($newImgDir, 0777, true);
             copy($_SERVER['DOCUMENT_ROOT'] . $file, $this->filesPath . $file);
         }
-        $this->allFiles = $this->allFiles + $files;
+
+        $this->dumpFilesList();
     }
 
 
@@ -294,7 +304,10 @@ class Export {
     private function dumpIblock()
     {
         $Exporter = new ExportIblock($this->products_iblock_id);
-
+        if ($skuID = $Exporter->SKUIblockID) {
+            $SKUIblock = new ExportIblock($skuID);
+            file_put_contents($this->export_folder_path . '/SKUiblock.json', json_encode($SKUIblock));
+        }
         file_put_contents($this->export_folder_path . '/iblock.json', json_encode($Exporter));
 
         $this->copyFiles($Exporter->getFiles());

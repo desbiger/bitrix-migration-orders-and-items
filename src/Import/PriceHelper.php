@@ -16,6 +16,8 @@ trait PriceHelper {
         'USER_LANG'      => '',
     ];
 
+    public $exculdedFields = ['ID' => ''];
+
     public function createPrice($fields)
     {
 
@@ -47,6 +49,7 @@ trait PriceHelper {
     public function clearFields($fields)
     {
         $fields['USER_LANG'] = ['ru' => $fields['NAME_LANG']];
+        $fields = array_diff_key($fields, $this->exculdedFields);
 
         return array_replace_recursive($this->defaultFields, $fields);
     }

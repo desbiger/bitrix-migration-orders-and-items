@@ -110,7 +110,10 @@ class ExportProducts {
      */
     protected function getSection($section_id = null)
     {
-        $list = \CIBlockSection::GetList([], ['IBLOCK_ID' => $this->iblock_id, 'SECTION_ID' => $section_id],null,['UF_*']);
+        $list = \CIBlockSection::GetList([], [
+            'IBLOCK_ID'  => $this->iblock_id,
+            'SECTION_ID' => $section_id
+        ], null, ['UF_*']);
 
         $sections = $this->FetchAll($list, function ($section) {
             $this->dumpFiles($section);
@@ -132,30 +135,41 @@ class ExportProducts {
      * @param $callback - функция, исполняемая каждые $chunks элементов
      * @param $chunks - количество элементов за один шаг
      */
-    public function getAllProducts($callback, $chunks)
+    public function getAllProducts($callback, $chunks, $from = 0)
     {
         $items = [];
         $list = \CIblockElement::getList([], ['IBLOCK_ID' => $this->iblock_id]);
         $count = $list->SelectedRowsCount();
+
         $i = 0;
         $page = 1;
-
         while ($item = $list->GetNextElement()) {
-            $i++;
 
+            $i++;
 
             CLI::show_status($page * $chunks + $i, $count);
 
-            if(!$this->NextStep($callback, $chunks, $i, $items, $page))
+            if (($i + ($page * $chunks)) < $from) {
+                if ($i == $chunks) {
+                    $i = 0;
+                    $page++;
+                }
+                continue;
+            }
+
+            if (!$this->NextStep($callback, $chunks, $i, $items, $page))
                 return;
 
             $fields = $this->arrayOnly($item->getFields(), $this->fields);
+
+            file_put_contents(realpath($_SERVER['DOCUMENT_ROOT']) . '/import_export/log.log', $fields['ID']);
+
+
             $props = $item->getProperties();
 
             $this->dumpPropertyFiles($props);
 
             $fields['PROPS'] = $props;
-            $fields['PRICES'] = $this->CatalogPrices->getPrices($fields['ID']);
             $fields['OFFERS'] = $this->getOffers($fields['ID']);
 
 
@@ -198,14 +212,16 @@ class ExportProducts {
         if ($i == $chunks) {
 
             $i = 0;
-            if($callback($items, $page, $this->files) === false)
+            if ($callback($items, $page, $this->files) === false)
                 return false;
             $this->files = [];
             $page++;
             $items = [];
         }
+
         return true;
     }
+
 
     /**
      * Комерческие предожения
@@ -216,6 +232,7 @@ class ExportProducts {
      */
     public function getOffers($elementId)
     {
+        //TODO перенсти на уровень дампа продукции
         $offersArray = \CIBlockPriceTools::GetOffersArray($this->iblock_id, $elementId);
 
         return $offersArray;

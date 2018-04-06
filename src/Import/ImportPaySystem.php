@@ -10,6 +10,7 @@ class ImportPaySystem {
     private $list;
     public $newPaySystemIDS = [];
     private $persontypes;
+    public $excludedFields = ['ACTION' => '', 'ID' => ''];
 
     /**
      * @param $list
@@ -48,9 +49,11 @@ class ImportPaySystem {
 
     private function createIfNotExists($paySystem)
     {
-        if (!$this->getPaySystemByName($paySystem['NAME'])) {
+        if (!$res = $this->getPaySystemByName($paySystem['NAME'])) {
             return $this->createPaySystem($paySystem);
         }
+
+        return $this->newPaySystemIDS[$paySystem['ID']] = $res['ID'];
     }
 
     /**
@@ -71,10 +74,10 @@ class ImportPaySystem {
     private function createPaySystem($paySystem)
     {
         $action = $paySystem['ACTION'];
-        unset($paySystem['ACTION']);
+
+        $paySystem = array_diff_key($paySystem, $this->excludedFields);
 
         $id = \CSalePaySystem::Add($paySystem);
-
         if ($id) {
             $this->newPaySystemIDS[$paySystem['ID']] = $id;
 

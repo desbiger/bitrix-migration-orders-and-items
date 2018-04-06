@@ -32,20 +32,49 @@ class ImportUsers {
      */
     public function import()
     {
-        $userObject = new \CUser();
+
         foreach ($this->list as $user) {
-            $newUser = $userObject->Add($user);
-            if (!$newUser) {
-                $filter = ['EMAIL' => $user['EMAIL']];
-                $order = ['sort'=>'asc'];
-                $tmp = 'sort';
-                $newUser = \CUser::GetList($order,$tmp, $filter)->Fetch()['ID'];
-            }
-            $this->ids[$user['ID']] = $newUser;
+            return $this->createUserIfNotExists($user);
         }
 
         return $this;
 
+    }
+
+    /**
+     * @param $user
+     *
+     * @return mixed
+     */
+    private function createUserIfNotExists($user)
+    {
+        if (!$id = $this->userExists($user)) {
+            return $this->createUser($user);
+        }
+
+        return $id;
+    }
+
+    /**
+     * @param $user
+     *
+     * @return mixed
+     */
+    private function createUser($user)
+    {
+        $userObject = new \CUser();
+
+        return $userObject->add($user);
+    }
+
+    /**
+     * @param $user
+     *
+     * @return mixed
+     */
+    private function userExists($user)
+    {
+        return \CUser::GetList(($by="personal_country"), ($order="desc"), ['EMAIL' => $user['EMAIL']])->Fetch()['ID'];
     }
 
 

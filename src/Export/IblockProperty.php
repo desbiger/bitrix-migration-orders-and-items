@@ -45,7 +45,7 @@ class IblockProperty {
         }
         if ($this->property['PROPERTY_TYPE'] == 'E') {
             if ($this->property['LINK_IBLOCK_ID'] != $this->property['IBLOCK_ID']) {
-                $this->ImportRelativeIblocks[] = (new ExportIblock($this->property['LINK_IBLOCK_ID']))->export();
+//                   $this->ImportRelativeIblocks[] = new ExportIblock($this->property['LINK_IBLOCK_ID']);
             }
         }
     }

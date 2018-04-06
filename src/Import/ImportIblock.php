@@ -2,11 +2,14 @@
 
 namespace BitrixMigration\Import;
 
+use BitrixMigration\Import\Contracts\Importer;
+use BitrixMigration\JsonReader;
 use Sprint\Migration\HelperManager;
 use \Bitrix\Highloadblock as HL;
 
-class ImportIblock {
+class ImportIblock implements Importer {
 
+    use JsonReader;
     public $settings;
     public $newIblockID;
     public $properties;
@@ -14,18 +17,33 @@ class ImportIblock {
     public $RelativeIblocks;
     public $newPropertyIDs;
     public $FilesPath;
+    public $catalogSettings;
+    public $dataFile;
     private $data;
     private $import_path;
 
-    public function __construct($data, $import_path)
+    public function __construct($data_file)
     {
         \CModule::IncludeModule('highloadblock');
-        $this->data = $data;
-        $this->import_path = $import_path;
+        $this->dataFile = $data_file;
+    }
+
+    public function before()
+    {
+        $this->import_path = Container::instance()->getImportPath();
+
+        $this->data = $iblock = $this->read($this->dataFile);
+        $this->catalogSettings = $this->data['catalogSettings'];
         $this->separate();
         $this->helper = new HelperManager();
-        $this->createIBlock();
     }
+
+    public function after()
+    {
+        $this->data = [];
+        $this->catalogSettings = [];
+    }
+
 
     /**
      * Разделяем входные данные
@@ -46,8 +64,10 @@ class ImportIblock {
         $IBLOCK_TYPE_ID = $this->settings['IBLOCK_TYPE_ID'];
 
         $this->createIblockType($IBLOCK_TYPE_ID);
-        $id = $this->helper->Iblock()->addIblockIfNotExists($this->settings);
+        $id = $this->helper->Iblock()->addIblockIfNotExists($this->settings, $this->catalogSettings);
         $this->newIblockID = $id;
+
+        Container::instance()->setNewIblock($id);
 
         $this->createProperties();
     }
@@ -68,11 +88,15 @@ class ImportIblock {
     private function createProperties()
     {
         foreach ($this->properties as $property) {
-            if ($property['USER_TYPE_SETTINGS'])
-                $this->createHiloadBlock($property);
+            if ($property['USER_TYPE_SETTINGS']) {
+                //TODO подогнать под хайлоад блоки
+
+                //$this->createHiloadBlock($property);
+
+            }
 
             //TODO поправить костыль, продумать универсальный способ
-            if($property['LINK_IBLOCK_ID'] == 6)
+            if ($property['LINK_IBLOCK_ID'] == 6)
                 $property['LINK_IBLOCK_ID'] = $this->newIblockID;
 
 
@@ -200,4 +224,19 @@ class ImportIblock {
         return $hlblock['TABLE_NAME'];
     }
 
+    public function execute()
+    {
+        $this->before();
+        $this->createIBlock();
+        $this->after();
+        Container::instance()->setNewIblock($this);
+    }
+
+    /**
+     * @return string
+     */
+    public function getImportName()
+    {
+        return 'Import IBlock';
+    }
 }

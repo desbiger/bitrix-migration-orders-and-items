@@ -4,9 +4,10 @@ namespace BitrixMigration\Import;
 
 use BitrixMigration\BitrixMigrationHelper;
 use BitrixMigration\CLI;
+use BitrixMigration\Import\Contracts\Importer;
 use BitrixMigration\JsonReader;
 
-class ImportPrices {
+class ImportPrices implements Importer {
     use JsonReader, BitrixMigrationHelper, PriceHelper;
 
 
@@ -34,15 +35,9 @@ class ImportPrices {
      * @param $importPath
      * @param $elementsNewIDs
      */
-    public function __construct($importPath, $elementsNewIDs)
+    public function __construct()
     {
-
-        $this->importPath = $importPath;
-        $this->elementsNewIDs = $elementsNewIDs;
-        $this->pricesPath = $this->importPath . '/prices/';
-        $this->importPriceTypes();
-        $this->getFilesList();
-
+        $this->importPath = Container::instance()->getImportPath();
     }
 
     /**
@@ -51,7 +46,7 @@ class ImportPrices {
     public function import()
     {
         foreach ($this->files as $file) {
-            $this->data = $this->read($this->pricesPath . $file);
+            $this->data = $this->read('prices/'. $file);
             $this->importPrices();
         }
     }
@@ -135,4 +130,31 @@ class ImportPrices {
         }
     }
 
+    public function execute()
+    {
+        $this->before();
+        $this->import();
+        $this->after();
+    }
+
+    /**
+     * @return string
+     */
+    public function getImportName()
+    {
+        return 'Import Prices';
+    }
+
+    public function before()
+    {
+        $this->elementsNewIDs = Container::instance()->getProductsImportResult()->newIds;
+        $this->pricesPath = $this->importPath . '/prices/';
+        $this->importPriceTypes();
+        $this->getFilesList();
+    }
+
+    public function after()
+    {
+
+    }
 }

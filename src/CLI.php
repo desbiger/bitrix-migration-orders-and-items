@@ -6,7 +6,7 @@ namespace BitrixMigration;
 
 class CLI {
 
-    static function show_status($done, $total, $size = 30)
+    static function show_status($done, $total, $size = 30,$string='')
     {
 
         static $start_time;
@@ -33,7 +33,7 @@ class CLI {
         $eta = round($rate * $left, 2);
         $elapsed = $now - $start_time;
         $memory = memory_get_usage();
-        $status_bar .= " remaining: " . number_format($eta) . " sec.  elapsed: " . number_format($elapsed) . " sec."." | memory usage: $memory";
+        $status_bar .= " remaining: " . number_format($eta) . " sec.  elapsed: " . number_format($elapsed) . " sec."." | memory usage: $memory".$string;
         echo "$status_bar  ";
 //        flush();
         if ($done == $total) {

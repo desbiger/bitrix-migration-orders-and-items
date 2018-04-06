@@ -5,9 +5,10 @@ namespace BitrixMigration\Import;
 
 use BitrixMigration\BitrixMigrationHelper;
 use BitrixMigration\Export\ExportProducts;
+use BitrixMigration\Import\Contracts\Importer;
 use BitrixMigration\JsonReader;
 
-class ImportOrders {
+class ImportOrders implements Importer {
     public $orders;
     public $importProducts;
     public $newUserIDS;
@@ -24,32 +25,19 @@ class ImportOrders {
      *
      * @param $catalog_iblock_id
      */
-    public function __construct($catalog_iblock_id,ImportProducts $importProducts)
+    public function __construct()
     {
         \CModule::IncludeModule('catalog');
         \CModule::IncludeModule('sale');
-
-        $this->catalog_iblock_id = $catalog_iblock_id;
-        $this->importProducts = $importProducts;
-
     }
 
     /**
      * @param $orders
      * @param $users
      */
-    public function import($orders, $users, $persons, $paySystem, $delivery)
+    public function import()
     {
-        $importPersonType = ImportPersonType::init($persons)->import();
-        $ImportPaySystem = ImportPaySystem::init($paySystem, $this->import_path, $importPersonType->NewIDS)->import();
-
-        $this->newUserIDS = ImportUsers::init($users)->import()->ids;
-        $this->newPersonsTypeIDS = $importPersonType->NewIDS;
-        $this->newOrderPropsIDS = $importPersonType->newOrderPropsIDS;
-        $this->newPaySystemIDS = $ImportPaySystem->newPaySystemIDS;
-
-
-        foreach ($orders as $user => $user_orders) {
+        foreach ($this->orders as $user => $user_orders) {
             if (count($user_orders)) {
                 $this->createOrders($user_orders);
             }
@@ -114,4 +102,53 @@ class ImportOrders {
     }
 
 
+    public function execute()
+    {
+        $this->before();
+        $this->import();
+        $this->after();
+    }
+
+    /**
+     * @return string
+     */
+    public function getImportName()
+    {
+        return "Import Orders";
+    }
+
+    public function before()
+    {
+
+        $container = Container::instance();
+
+        $this->orders = $this->read('orders');
+        $this->catalog_iblock_id = $container->getNewIblock();
+        $this->importProducts = $container->getProductsImportResult();
+        $import_path = $container->getImportPath();
+
+        $persons = $this->read('PersonType');
+        $importPersonType = ImportPersonType::init($persons)->import();
+
+        $paySystem = $this->read('paySystem');
+
+        $ImportPaySystem = ImportPaySystem::init($paySystem, $import_path, $importPersonType->NewIDS)->import();
+
+        $users = $this->read('users');
+        $this->newUserIDS = ImportUsers::init($users)->import()->ids;
+
+
+        $this->newDeliveryIDs = ImportDelivery::init()->import()->newIDs;
+        dd();
+
+        $this->newPersonsTypeIDS = $importPersonType->NewIDS;
+        $this->newOrderPropsIDS = $importPersonType->newOrderPropsIDS;
+        $this->newPaySystemIDS = $ImportPaySystem->newPaySystemIDS;
+
+    }
+
+    public function after()
+    {
+        $this->orders = [];
+    }
 }

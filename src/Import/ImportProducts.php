@@ -4,17 +4,19 @@ namespace BitrixMigration\Import;
 
 use BitrixMigration\BitrixMigrationHelper;
 use BitrixMigration\CLI;
-use BitrixMigration\Export\ExportProducts;
+use BitrixMigration\Import\Contracts\Importer;
+use BitrixMigration\Import\ProductsReader\File;
 use BitrixMigration\JsonReader;
 
-class ImportProducts {
+class ImportProducts implements Importer {
 
     use BitrixMigrationHelper, JsonReader;
     public $iblockElement;
     public $exportProducts;
     public $readedChunks;
-    public $sectionImportResult;
     public $OldFilesArray;
+    public $newIblockID;
+    public $allFilesArray = [];
     /**
      * @var ImportIblock
      */
@@ -24,22 +26,9 @@ class ImportProducts {
     public $newIds;
     protected $PropertyLinkedItems;
 
-    public function __construct(ImportIblock $newIblock, $import_path)
+    public function __construct()
     {
-        $this->import_path = $import_path;
-        $this->newIblock = $newIblock;
-        $this->OldFilesArray = $this->read('/files/allFiles');
-
-
         $this->iblockElement = new \CIBlockElement();
-
-
-        $this->sectionImportResult = (new ImportSections($import_path, $this->newIblock->newIblockID))->import()->newSectionIDS;
-
-
-        $this->importCatalog();
-
-        $this->importPrices();
     }
 
     /**
@@ -62,55 +51,21 @@ class ImportProducts {
      */
     private function importCatalog()
     {
-        while ($file = $this->getNextChunk()) {
-            $this->createElements($file);
-        }
-    }
 
-    /**
-     * Получаем слудующий файл
-     * @return bool|mixed
-     */
-    private function getNextChunk()
-    {
-        $excluded = ['.', '..'];
-        $path = $this->import_path . '/products/';
-        $files = scandir($path);
-        $files = array_diff($files, $excluded);
-        foreach ($files as $file) {
-            if (!$this->isReaded($file)) {
-                $this->readedChunks[] = $file;
+        $reader = new File($this->import_path . '/products', $this->import_path);
 
-                return $this->read('/products/' . str_replace(".json", '', $file));
-            }
+        while (list($element, $count, $counter, $file) = $reader->getNextElement()) {
+
+            CLI::show_status($counter, $count, 30, ' | file: ' . $file);
+            $this->newIds[$element['ID']] = $this->createElementIfNotExist($element);
+
+            if($counter == 10)
+                break;
 
         }
 
-        return false;
     }
 
-    /**
-     * Проверка открывался ли уже переданный файл
-     *
-     * @param $file
-     *
-     * @return bool
-     */
-    private function isReaded($file)
-    {
-        return in_array($file, $this->readedChunks);
-    }
-
-    /**
-     * @param $file
-     */
-    private function createElements($file)
-    {
-        foreach ($file as $i => $Element) {
-            CLI::show_status($i + 1, count($file));
-            $this->newIds[$Element['ID']] = $this->createElementIfNotExist($Element);
-        }
-    }
 
     /**
      * @param $Element
@@ -123,8 +78,6 @@ class ImportProducts {
         if ($id = $this->exists($Element)) {
             return $id;
         }
-        $this->prices = $Element['PRICES'];
-        $this->offers = $Element['OFFERS'];
 
         $Element = collect($Element)->except(['PRICES', 'OFFERS'])->toArray();
 
@@ -161,8 +114,8 @@ class ImportProducts {
     {
 
         $replace = [
-            'IBLOCK_ID'         => $this->newIblock->newIblockID,
-            'IBLOCK_SECTION_ID' => $this->sectionImportResult[$Element['IBLOCK_SECTION_ID']],
+            'IBLOCK_ID'         => $this->newIblockID,
+            'IBLOCK_SECTION_ID' => Container::instance()->getSectionImportResult()[$Element['IBLOCK_SECTION_ID']],
             'PREVIEW_PICTURE'   => $this->getFileArray($Element['PREVIEW_PICTURE']),
             'DETAIL_PICTURE'    => $this->getFileArray($Element['DETAIL_PICTURE'])
         ];
@@ -227,7 +180,7 @@ class ImportProducts {
     private function getFileArray($oldID)
     {
         if ($oldID) {
-            $path = $this->import_path . '/files' . $this->OldFilesArray[$oldID];
+            $path = $this->import_path . '/files' . $this->allFilesArray[$oldID];
 
             return \CFile::MakeFileArray($path);
         }
@@ -286,14 +239,44 @@ class ImportProducts {
         return $propValue['ID'];
     }
 
-    /**
-     * Импортируем цены
-     */
-    private function importPrices()
+    public function before()
     {
-        $importer = new ImportPrices($this->import_path, $this->newIds);
-        $importer->import();
+        $this->import_path = Container::instance()->getImportPath();
+        $this->newIblock = Container::instance()->getNewIblock();
+        $this->newIblockID = $this->newIblock->newIblockID;
+        $this->loadFiles();
+    }
+
+    public function after()
+    {
+       $this->allFilesArray = [];
     }
 
 
+    private function loadFiles()
+    {
+        $files = $this->scanDir($this->import_path . '/files');
+        foreach ($files as $file) {
+            $addArray = $this->read('/files/' . $file);
+            if (count($addArray))
+                $this->allFilesArray = $this->allFilesArray + $addArray;
+        }
+    }
+
+
+    public function execute()
+    {
+        $this->before();
+        $this->importCatalog();
+        $this->after();
+        Container::instance()->setProductsImportResult($this);
+    }
+
+    /**
+     * @return string
+     */
+    public function getImportName()
+    {
+        return 'Import IBlock Elements';
+    }
 }

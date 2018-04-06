@@ -35,7 +35,7 @@ class ImportPersonType {
     public function import()
     {
         foreach ($this->persons as $person) {
-            $this->importPersonType($person);
+            $this->importPersonTypeIfNotExists($person);
         }
 
         return $this;
@@ -46,7 +46,7 @@ class ImportPersonType {
      *
      * @return $this
      */
-    private function importPersonType($person)
+    private function importPersonTypeIfNotExists($person)
     {
         if (!$this->personTypeExists($person)) {
             $this->cretePersonType($person);

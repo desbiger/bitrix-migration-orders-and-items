@@ -4,8 +4,10 @@
 namespace BitrixMigration;
 
 
+use BitrixMigration\Import\Container;
+
 trait JsonReader {
-    private $import_path;
+
     /**
      * @param $string
      *
@@ -13,6 +15,7 @@ trait JsonReader {
      */
     protected function read($string)
     {
-        return (array)json_decode(file_get_contents($this->import_path . "/$string.json"), true);
+        $importPath = Container::instance()->getImportPath();
+        return (array)json_decode(file_get_contents($importPath . "/$string.json"), true);
     }
 }
