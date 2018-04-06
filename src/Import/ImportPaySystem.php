@@ -97,9 +97,12 @@ class ImportPaySystem {
      */
     private function createPaySystemAction($action)
     {
+
         $path = $this->import_path . '/files' . $action['LOGOTIP'];
         $action['LOGOTIP'] = \CFile::MakeFileArray($path);
         $action['PERSON_TYPE_ID'] = $action['PERSON_TYPE_ID'] ? $this->persontypes[$action['PERSON_TYPE_ID']] : $action['PERSON_TYPE_ID'];
+
+        $action = array_diff_key($action,$this->excludedFields);
 
         return \CSalePaySystemAction::Add($action);
     }

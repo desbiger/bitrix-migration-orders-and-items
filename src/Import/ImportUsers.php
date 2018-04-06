@@ -2,10 +2,13 @@
 
 namespace BitrixMigration\Import;
 
+use BitrixMigration\CLI;
+
 class ImportUsers {
 
     public $list;
     public $ids;
+    public $newIDs;
 
     /**
      * @param $users
@@ -32,9 +35,11 @@ class ImportUsers {
      */
     public function import()
     {
-
+        $i = 0;
+        $count = count($this->list);
         foreach ($this->list as $user) {
-            return $this->createUserIfNotExists($user);
+            $this->newIDs[$user['ID']] = $this->createUserIfNotExists($user);
+            CLI::show_status($i++,$count,30,' | import users');
         }
 
         return $this;
@@ -49,6 +54,7 @@ class ImportUsers {
     private function createUserIfNotExists($user)
     {
         if (!$id = $this->userExists($user)) {
+
             return $this->createUser($user);
         }
 

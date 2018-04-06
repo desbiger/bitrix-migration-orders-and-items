@@ -135,7 +135,7 @@ class ImportOrders implements Importer {
         $ImportPaySystem = ImportPaySystem::init($paySystem, $import_path, $importPersonType->NewIDS)->import();
 
         $users = $this->read('users');
-        $this->newUserIDS = ImportUsers::init($users)->import()->ids;
+        $this->newUserIDS = ImportUsers::init($users)->import()->newIDs;
 
 
         $this->newDeliveryIDs = ImportDelivery::init()->import()->newIDs;
