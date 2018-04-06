@@ -59,8 +59,8 @@ class ImportProducts implements Importer {
             CLI::show_status($counter, $count, 30, ' | file: ' . $file);
             $this->newIds[$element['ID']] = $this->createElementIfNotExist($element);
 
-            if($counter == 10)
-                break;
+//            if($counter == 10)
+//                break;
 
         }
 
