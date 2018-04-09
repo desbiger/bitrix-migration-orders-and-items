@@ -31,7 +31,7 @@ class Export {
     public $deliveryJson = '/delivery.json';
     public $personType = '/personType.json';
     public $allFilesJson = '/allFiles';
-    public $ordersJson = '/orders.json';
+    public $ordersJson = '/orders/orders';
     private $products_iblock_id;
 
     /**
@@ -116,7 +116,7 @@ class Export {
     public function export($productsPerPage = 1000, $from = 0)
     {
         //        $this->dumpPriceTypes();
-        $this->dumpIblock();
+        //        $this->dumpIblock();
         //        $this->dumpProducts($productsPerPage, $from);
         //        $this->dumpSections();
         //        $this->dumpSectionsUserFields();
@@ -124,7 +124,7 @@ class Export {
         //        $this->dumpPersonType();
         //        $this->dumpDelivery();
         //        $this->dumpUsers();
-        //        $this->dumpOrders();
+        $this->dumpOrders();
 
         return $this;
     }
@@ -148,12 +148,13 @@ class Export {
      */
     public function dumpOrders()
     {
-        $res = [];
-        foreach ($this->users->getAllUsers() as $user) {
-            $res[$user['ID']] = $this->ExportOrders->getUserOrders($user['ID']);
-        }
-        $res = json_encode($res);
-        file_put_contents($this->export_folder_path . $this->ordersJson, $res);
+
+        mkdir($this->export_folder_path.'/orders');
+        $this->ExportOrders->getAll(5000, function ($list, $page) {
+            $res = json_encode($list);
+            file_put_contents($this->export_folder_path . $this->ordersJson . "_$page.json", $res);
+        });
+
 
         return $this;
     }
