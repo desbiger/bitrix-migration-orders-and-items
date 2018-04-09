@@ -5,13 +5,16 @@ namespace BitrixMigration\Import\ProductsReader;
 use BitrixMigration\BitrixMigrationHelper;
 use BitrixMigration\JsonReader;
 
-class File implements ProductsReaderInterface {
+class FilesReader implements DevidedFilesInterface {
+    public $folder = '/orders/';
     use BitrixMigrationHelper, JsonReader;
     public $Elements = [];
     public $readedChunks;
     public $counter = 0;
     public $currentFile;
     private $filesPath;
+
+    public $loadedIDs = [];
 
     /**
      * ProductsReaderInterface constructor.
@@ -30,13 +33,22 @@ class File implements ProductsReaderInterface {
      */
     public function getNextElement()
     {
-        if (count($this->Elements) && $nextElement = next($this->Elements))
-            return [$nextElement, count($this->Elements),$this->counter++,$this->currentFile];
+        if (count($this->Elements) && $nextElement = next($this->Elements)) {
+
+            if ($this->isLoaded($nextElement['ID'])) {
+                echo "\rpass ".$nextElement['ID'];
+                $this->counter++;
+                $nextElement = null;
+
+                return $this->getNextElement();
+            }
+
+            return [$nextElement, count($this->Elements), $this->counter++, $this->currentFile];
+
+        }
 
 
         if ($this->getNextChunk()) {
-            if (count($this->Elements) && $nextElement = next($this->Elements))
-                return [$nextElement, count($this->Elements),$this->counter++,$this->currentFile];
 
             return $this->getNextElement();
         }
@@ -51,17 +63,19 @@ class File implements ProductsReaderInterface {
      */
     private function getNextChunk()
     {
-
+        unset($this->Elements);
         $path = $this->filesPath;
         $files = $this->scanDir($path);
-        $this->Elements = [];
+
+
+
         foreach ($files as $file) {
 
             if (!$this->isReaded($file)) {
                 $this->readedChunks[] = $file;
                 $this->currentFile = $file;
                 $this->counter = 0;
-                $this->Elements = $this->read('/products/' . $file);
+                $this->Elements = $this->read($this->folder . $file);
 
                 return true;
             }
@@ -81,5 +95,16 @@ class File implements ProductsReaderInterface {
     private function isReaded($file)
     {
         return in_array($file, $this->readedChunks);
+    }
+
+    /**
+     * @param $ID
+     *
+     * @return bool
+     */
+    private function isLoaded($ID)
+    {
+        $res = in_array($ID, $this->loadedIDs);
+        return $res;
     }
 }

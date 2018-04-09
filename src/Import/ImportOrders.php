@@ -4,14 +4,17 @@ namespace BitrixMigration\Import;
 
 
 use BitrixMigration\BitrixMigrationHelper;
+use BitrixMigration\CLI;
 use BitrixMigration\Export\ExportProducts;
 use BitrixMigration\Import\Contracts\Importer;
+use BitrixMigration\Import\ProductsReader\Orders;
 use BitrixMigration\JsonReader;
 
 class ImportOrders implements Importer {
     public $orders;
     public $importProducts;
     public $newUserIDS;
+    public $newOrderIDS;
     public $newPersonsTypeIDS;
     public $newOrderPropsIDS;
     public $newPaySystemIDS;
@@ -37,11 +40,20 @@ class ImportOrders implements Importer {
      */
     public function import()
     {
-        foreach ($this->orders as $user => $user_orders) {
-            if (count($user_orders)) {
-                $this->createOrders($user_orders);
-            }
+
+        $importPath = Container::instance()->getImportPath();
+        $reader = new Orders($importPath . '/orders', $importPath);
+
+        while (list($element, $count, $counter, $file) = $reader->getNextElement()) {
+            dd($element);
+            CLI::show_status($counter, $count, 30, ' | file: ' . $file);
+            $this->newOrderIDS[$element['ID']] = $this->createOrders($element);
+
+            if ($counter == 10)
+                break;
+
         }
+
     }
 
     /**
@@ -122,28 +134,26 @@ class ImportOrders implements Importer {
 
         $container = Container::instance();
 
-        $this->orders = $this->read('orders');
         $this->catalog_iblock_id = $container->getNewIblock();
         $this->importProducts = $container->getProductsImportResult();
         $import_path = $container->getImportPath();
 
-        $persons = $this->read('PersonType');
+
+        $persons = $this->read('personType');
         $importPersonType = ImportPersonType::init($persons)->import();
+        $container->setNewPersonsTypeIDS($importPersonType->NewIDS);
+
 
         $paySystem = $this->read('paySystem');
-
         $ImportPaySystem = ImportPaySystem::init($paySystem, $import_path, $importPersonType->NewIDS)->import();
+        $container->setNewPaySystemIDS($ImportPaySystem->newPaySystemIDS);
 
         $users = $this->read('users');
-        $this->newUserIDS = ImportUsers::init($users)->import()->newIDs;
+        $container->setUsersImportResult(ImportUsers::init($users)->import()->newIDs);
 
 
-        $this->newDeliveryIDs = ImportDelivery::init()->import()->newIDs;
-        dd();
+        $container->setNewDeliveryIDs(ImportDelivery::init()->import()->newIDs);
 
-        $this->newPersonsTypeIDS = $importPersonType->NewIDS;
-        $this->newOrderPropsIDS = $importPersonType->newOrderPropsIDS;
-        $this->newPaySystemIDS = $ImportPaySystem->newPaySystemIDS;
 
     }
 

@@ -2,7 +2,7 @@
 
 namespace BitrixMigration\Import\ProductsReader;
 
-interface ProductsReaderInterface {
+interface DevidedFilesInterface {
 
     /**
      * ProductsReaderInterface constructor.

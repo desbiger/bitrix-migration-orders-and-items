@@ -147,7 +147,7 @@ class ImportPrices implements Importer {
 
     public function before()
     {
-        $this->elementsNewIDs = Container::instance()->getProductsImportResult()->newIds;
+        $this->elementsNewIDs = Container::instance()->getNewProductsIDs();
         $this->pricesPath = $this->importPath . '/prices/';
         $this->importPriceTypes();
         $this->getFilesList();

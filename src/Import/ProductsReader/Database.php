@@ -1,9 +1,9 @@
 <?php
 namespace BitrixMigration\Import\ProductsReader;
 
-use BitrixMigration\Import\ProductsReader\ProductsReaderInterface;
+use BitrixMigration\Import\ProductsReader\DevidedFilesInterface;
 
-class Database implements ProductsReaderInterface {
+class Database implements DevidedFilesInterface {
 
     /**
      * ProductsReaderInterface constructor.

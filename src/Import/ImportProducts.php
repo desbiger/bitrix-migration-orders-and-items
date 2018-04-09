@@ -5,7 +5,7 @@ namespace BitrixMigration\Import;
 use BitrixMigration\BitrixMigrationHelper;
 use BitrixMigration\CLI;
 use BitrixMigration\Import\Contracts\Importer;
-use BitrixMigration\Import\ProductsReader\File;
+use BitrixMigration\Import\ProductsReader\Products;
 use BitrixMigration\JsonReader;
 
 class ImportProducts implements Importer {
@@ -52,15 +52,19 @@ class ImportProducts implements Importer {
     private function importCatalog()
     {
 
-        $reader = new File($this->import_path . '/products', $this->import_path);
+        $reader = new Products($this->import_path . '/products', $this->import_path);
+
+        $list = Container::instance()->newProductsIDs;
+
+        $reader->setLoadedIDS(array_keys($list));
 
         while (list($element, $count, $counter, $file) = $reader->getNextElement()) {
 
             CLI::show_status($counter, $count, 30, ' | file: ' . $file);
-            $this->newIds[$element['ID']] = $this->createElementIfNotExist($element);
-
-//            if($counter == 10)
-//                break;
+            $newID = $this->createElementIfNotExist($element);
+            Container::instance()->addNewProductID($element['ID'], $newID);
+            //            if ($counter == 80)
+            //                break;
 
         }
 
@@ -241,15 +245,16 @@ class ImportProducts implements Importer {
 
     public function before()
     {
-        $this->import_path = Container::instance()->getImportPath();
-        $this->newIblock = Container::instance()->getNewIblock();
+        $container = Container::instance();
+        $this->import_path = $container->getImportPath();
+        $this->newIblock = $container->getNewIblock();
         $this->newIblockID = $this->newIblock->newIblockID;
         $this->loadFiles();
     }
 
     public function after()
     {
-       $this->allFilesArray = [];
+        $this->allFilesArray = [];
     }
 
 
@@ -269,7 +274,6 @@ class ImportProducts implements Importer {
         $this->before();
         $this->importCatalog();
         $this->after();
-        Container::instance()->setProductsImportResult($this);
     }
 
     /**

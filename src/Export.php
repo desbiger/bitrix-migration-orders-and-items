@@ -120,11 +120,11 @@ class Export {
         //        $this->dumpProducts($productsPerPage, $from);
         //        $this->dumpSections();
         //        $this->dumpSectionsUserFields();
-        //        $this->dumpPaySystems();
-        //        $this->dumpPersonType();
-        //        $this->dumpDelivery();
+                $this->dumpPaySystems();
+//                $this->dumpPersonType();
+                $this->dumpDelivery();
         //        $this->dumpUsers();
-        $this->dumpOrders();
+//        $this->dumpOrders();
 
         return $this;
     }

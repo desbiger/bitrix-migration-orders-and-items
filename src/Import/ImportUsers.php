@@ -27,7 +27,8 @@ class ImportUsers {
      */
     public function __construct($list)
     {
-        $this->list = $list;
+
+        $this->list = $this->onlyNotImportedItems($list);
     }
 
     /**
@@ -39,7 +40,7 @@ class ImportUsers {
         $count = count($this->list);
         foreach ($this->list as $user) {
             $this->newIDs[$user['ID']] = $this->createUserIfNotExists($user);
-            CLI::show_status($i++,$count,30,' | import users');
+            CLI::show_status($i++, $count, 30, ' | import users');
         }
 
         return $this;
@@ -80,7 +81,27 @@ class ImportUsers {
      */
     private function userExists($user)
     {
-        return \CUser::GetList(($by="personal_country"), ($order="desc"), ['EMAIL' => $user['EMAIL']])->Fetch()['ID'];
+        return \CUser::GetList(($by = "personal_country"), ($order = "desc"), ['EMAIL' => $user['EMAIL']])->Fetch()['ID'];
+    }
+
+    private function onlyNotImportedItems($list)
+    {
+        $this->newIDs = Container::instance()->getUsersImportResult();
+        if (!$this->newIDs) {
+            return $list;
+        }
+        $res = [];
+        $importedIDs = array_keys($this->newIDs);
+        $count = count($list);
+        $i = 0;
+        foreach ($list as $vol) {
+            CLI::show_status($i++, $count, 30, " clearing array, found to import:" . count($res));
+            if (!in_array($vol['ID'], $importedIDs)) {
+                $res = $vol;
+            }
+        }
+
+        return $res;
     }
 
 

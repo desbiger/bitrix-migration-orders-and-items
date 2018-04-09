@@ -30,7 +30,8 @@ class ExportPersonType {
      */
     private function getList()
     {
-        return $this->FetchAll(\CSalePersonType::GetList([], ['LID' => 's1']), function ($item) {
+        //TODO вынести выбор сайта
+        return $this->FetchAll(\CSalePersonType::GetList([], ['LID' => 's2']), function ($item) {
             $item['PROPS'] = $this->FetchAll(\CSaleOrderProps::GetList([], ['PERSON_TYPE_ID' => $item['ID']]));
             return $item;
         });
