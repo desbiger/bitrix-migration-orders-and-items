@@ -58,14 +58,12 @@ class ImportProducts implements Importer {
 
         $reader->setLoadedIDS(array_keys($list));
 
+        echo "\n";
         while (list($element, $count, $counter, $file) = $reader->getNextElement()) {
 
             CLI::show_status($counter, $count, 30, ' | file: ' . $file);
             $newID = $this->createElementIfNotExist($element);
             Container::instance()->addNewProductID($element['ID'], $newID);
-            //            if ($counter == 80)
-            //                break;
-
         }
 
     }
@@ -209,7 +207,8 @@ class ImportProducts implements Importer {
      */
     public function getListPropertyIDByValue($item)
     {
-        return \CIBlockProperty::GetPropertyEnum($this->getNewPropertyID($item['ID']), [], ['XML_ID' => $item['VALUE_XML_ID'][0]])->Fetch();
+        return \CIBlockProperty::GetPropertyEnum($this->getNewPropertyID($item['ID']), [], ['XML_ID' => $item['VALUE_XML_ID'][0]])
+                               ->Fetch();
     }
 
     /**
@@ -258,6 +257,9 @@ class ImportProducts implements Importer {
     }
 
 
+    /**
+     * Загрузка всех картинок
+     */
     private function loadFiles()
     {
         $files = $this->scanDir($this->import_path . '/files');
@@ -266,6 +268,7 @@ class ImportProducts implements Importer {
             if (count($addArray))
                 $this->allFilesArray = $this->allFilesArray + $addArray;
         }
+        $addArray = null;
     }
 
 

@@ -5,6 +5,7 @@ namespace BitrixMigration\Import;
 
 
 use BitrixMigration\BitrixMigrationHelper;
+use BitrixMigration\CLI;
 use BitrixMigration\JsonReader;
 
 class ImportPriceType {
@@ -31,9 +32,16 @@ class ImportPriceType {
      */
     public function import()
     {
+        $i = 0;
+
         foreach ($this->data as $type) {
+            CLI::show_status($i++, count($this->data));
             $this->newIDs[$type['ID']] = $this->createPriceTypeIfNotExists($type);
         }
+
+        Container::instance()->newPriceTypesIDs = $this->newIDs;
+        Container::instance()->trySaveContainer();
+
         return $this;
     }
 
@@ -57,7 +65,16 @@ class ImportPriceType {
      */
     private function loadTypes()
     {
-        $this->data = $this->read('priceTypes');
+        echo "\n check loaded priceTypes";
+        foreach ($this->read('priceTypes') as $item) {
+            if (!$this->isLoaded($item))
+                $this->data[] = $item;
+        };
+    }
+
+    private function isLoaded($item)
+    {
+        return in_array($item['ID'], array_keys(Container::instance()->newPriceTypesIDs));
     }
 
 }

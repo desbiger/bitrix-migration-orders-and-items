@@ -13,7 +13,8 @@ class Container {
     public $newPaySystemIDS;
     public $newDeliveryIDs;
     public $newProductsIDs;
-    public $productsStorage;
+    public $newPriceTypesIDs;
+    public $newPriceIDs;
 
 
     public $sectionImportResult;
@@ -213,9 +214,18 @@ class Container {
      * @param $id
      * @param $newID
      */
-    public function addNewProductID($id,$newID)
+    public function addNewProductID($id, $newID)
     {
         $this->newProductsIDs[$id] = $newID;
+        $this->trySaveContainer();
+    }
+
+    /**
+     * @param mixed $newPriceIDs
+     */
+    public function addNewPriceID($oldID, $newID)
+    {
+        $this->newPriceIDs[$oldID] = $newID;
         $this->trySaveContainer();
     }
 

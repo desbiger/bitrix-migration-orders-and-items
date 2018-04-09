@@ -45,14 +45,11 @@ class ImportOrders implements Importer {
         $reader = new Orders($importPath . '/orders', $importPath);
 
         while (list($element, $count, $counter, $file) = $reader->getNextElement()) {
-            dd($element);
             CLI::show_status($counter, $count, 30, ' | file: ' . $file);
             $this->newOrderIDS[$element['ID']] = $this->createOrders($element);
-
-            if ($counter == 10)
-                break;
-
         }
+        Container::instance()->newOrdersIDs = $this->newOrderIDS;
+        Container::instance()->trySaveContainer();
 
     }
 
@@ -61,10 +58,8 @@ class ImportOrders implements Importer {
      */
     private function createOrders($user_orders)
     {
-        foreach ($user_orders as $order) {
-            $this->updateOrderData($order);
-            $this->createOrder($order);
-        }
+        $this->updateOrderData($user_orders);
+        $this->createOrder($user_orders);
     }
 
     /**
@@ -72,15 +67,22 @@ class ImportOrders implements Importer {
      */
     private function updateOrderData(&$order)
     {
-        $order['USER_ID'] = $this->newUserIDS[$order['USER_ID']];
-        $order['EMP_ALLOW_DELIVERY_ID'] = $this->newUserIDS[$order['EMP_ALLOW_DELIVERY_ID']];
-        $order['EMP_PAYED_ID'] = $this->newUserIDS[$order['EMP_PAYED_ID']];
-        $order['PAY_SYSTEM_ID'] = $this->newPaySystemIDS[$order['PAY_SYSTEM_ID']];
+        $container = Container::instance();
+        $order['FUSER_ID'] = $container->usersImportResult[$order['FUSER_ID']];
+        $order['LID'] = 's1';
+        unset($order['STATUS_ID']);
+        $order['PAY_SYSTEM_ID'] = $container->newPaySystemIDS[$order['PAY_SYSTEM_ID']];
+
         foreach ($order['PRODUCTS'] as &$product) {
             if (count($product)) {
 
-                $product['PRODUCT_ID'] = (new ExportProducts($this->catalog_iblock_id))->getProductIdByXMLID($product['PRODUCT_XML_ID']);
-                $product['PRODUCT_PRICE_ID'] = $this->importProducts->getProductPriceID($product['PRODUCT_XML_ID'], $product['PRICE']);
+                $newProductID = $container->newProductsIDs[$product['PRODUCT_ID']];
+                if ($newProductID) {
+                    $product['PRODUCT_ID'] = $newProductID;
+                    $product['PRODUCT_PRICE_ID'] = $container->newPriceIDs[$product['PRODUCT_PRICE_ID']];
+                    continue;
+                }
+                unset($product);
             }
         }
     }
@@ -116,7 +118,7 @@ class ImportOrders implements Importer {
 
     public function execute()
     {
-        $this->before();
+        //        $this->before();
         $this->import();
         $this->after();
     }

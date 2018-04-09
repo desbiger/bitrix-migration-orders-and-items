@@ -2,47 +2,34 @@
 
 namespace BitrixMigration;
 
+use BitrixMigration\Import\Container;
+use BitrixMigration\Import\ProductsReader\Orders;
+
 class ImportOrders {
 
-    public function saveToJson($path)
+    public function export()
     {
-        return file_put_contents($path, json_encode($this->getAll()));
+        $this->before();
+        $this->import();
+        $this->after();
     }
 
-    /**
-     * Список всех заказов
-     *
-     * @return array
-     */
-    public function getAll()
+    private function before()
     {
-        $ordersList = \CSaleOrder::GetList();
-        while ($order = $ordersList->Fetch()) {
-            $order['PROPS'] = $this->orderProps($order['ID']);
-            $order['ITEMS'] = $this->orderProducts($order['ID']);
-            $orders[] = $order;
-        }
-
-        return $orders;
     }
 
-
-
-    /**
-     * Список товаров заказа
-     *
-     * @param $order_id
-     *
-     * @return array
-     */
-    public function orderProducts($order_id)
+    private function import()
     {
-        $list = \CSaleBasket::GetList([], ['ORDER_ID' => $order_id]);
-        while ($item = $list->Fetch()) {
-            $products[] = $item;
-        }
+        $import_path = Container::instance()->import_path;
+        $list = new Orders($import_path . '/orders', $import_path);
 
-        return $products;
+        while(list($element,$count,$counter,$file) = $list->getNextElement()){
+            dd($element);
+        }
+    }
+
+    private function after()
+    {
     }
 
 

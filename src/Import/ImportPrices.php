@@ -5,6 +5,7 @@ namespace BitrixMigration\Import;
 use BitrixMigration\BitrixMigrationHelper;
 use BitrixMigration\CLI;
 use BitrixMigration\Import\Contracts\Importer;
+use BitrixMigration\Import\ProductsReader\Prices;
 use BitrixMigration\JsonReader;
 
 class ImportPrices implements Importer {
@@ -45,32 +46,14 @@ class ImportPrices implements Importer {
      */
     public function import()
     {
-        foreach ($this->files as $file) {
-            $this->data = $this->read('prices/'. $file);
-            $this->importPrices();
-        }
-    }
+        $importPath = Container::instance()->getImportPath();
 
-    /**
-     * Получаем список файлов импорта
-     * @return array
-     */
-    private function getFilesList()
-    {
-        $this->files = $this->scanDir($this->pricesPath);
-    }
+        $list = new Prices($importPath . '/prices', $importPath);
 
-    /**
-     *  Импортируем все цены одного файла
-     */
-    private function importPrices()
-    {
-        $i = 0;
-        foreach ($this->data as $elementID => $itemPrices) {
-            CLI::show_status($i++, count($this->data));
+        while (list($element, $count, $counter, $file) = $list->getNextElement()) {
 
-            if (array_key_exists($elementID, $this->elementsNewIDs))
-                $this->addPriceIfNotExists($elementID, $itemPrices);
+            CLI::show_status($counter, count($count), 30, ' | Import prices | file: ' . $file);
+            $this->addPriceIfNotExists($element);
         }
     }
 
@@ -80,26 +63,13 @@ class ImportPrices implements Importer {
      * @param $elementID
      * @param $itemPrices
      */
-    private function addPriceIfNotExists($elementID, $itemPrices)
+    private function addPriceIfNotExists($itemPrices)
     {
-        $diff = [
-            'ID'         => '',
-            'CAN_BUY'    => '',
-            'CAN_ACCESS' => ''
-        ];
 
-        $itemPrices = array_map(function ($price) use ($diff) {
+        $itemID = $itemPrices[0]['ID'];
+        $itemPrices = $this->changeRelationIDs($itemPrices);
 
-            $clearFields = array_diff_key($price, $diff);
-
-            $changedFields = $this->changeProductAndGroupID($clearFields);
-            $changedFields = array_replace_recursive($this->default, $changedFields);
-
-            return $changedFields;
-
-        }, $itemPrices);
-
-        $this->ProductAddPrices($itemPrices);
+        $this->ProductAddPrices($itemID, $itemPrices);
     }
 
     /**
@@ -107,29 +77,59 @@ class ImportPrices implements Importer {
      *
      * @param $clearFields
      *
-     * @return array
+     * @return bool
      */
     private function changeProductAndGroupID($clearFields)
     {
-        $clearFields = array_replace_recursive($clearFields, ['PRODUCT_ID' => $this->elementsNewIDs[$clearFields['PRODUCT_ID']]]);
-        $clearFields = array_replace_recursive($clearFields, ['CATALOG_GROUP_ID' => $this->newPriceTypes[$clearFields['CATALOG_GROUP_ID']]]);
+        $container = Container::instance();
+
+        $newProductID = $container->newProductsIDs[$clearFields['PRODUCT_ID']];
+
+
+        if (!$newProductID)
+            return false;
+
+        $clearFields = array_replace_recursive($clearFields, ['PRODUCT_ID' => $newProductID]);
+        $clearFields = array_replace_recursive($clearFields, ['CATALOG_GROUP_ID' => $container->newPriceTypesIDs[$clearFields['CATALOG_GROUP_ID']]]);
 
         return $clearFields;
     }
 
+    /**
+     *
+     */
     private function importPriceTypes()
     {
-        $this->priceTypes = new ImportPriceType($this->importPath);
-        $this->newPriceTypes = $this->priceTypes->import()->newIDs;
+        (new ImportPriceType($this->importPath))->import();
     }
 
-    private function ProductAddPrices($itemPrices)
+    /**
+     * @param $itemPrices
+     */
+    private function ProductAddPrices($oldID, $itemPrices)
     {
         foreach ($itemPrices as $price) {
-            \CPrice::Add($price);
+            if (!$price) {
+                echo "\n" . $oldID . ' passed';
+                continue;
+            }
+
+            if ($id = $this->productPriceExists($price)) {
+                Container::instance()->newPriceIDs[$oldID] = $id;
+                continue;
+            }
+            $price = array_diff_key($price, ['CATALOG_GROUP_NAME' => '', 'EXTRA_ID' => '']);
+
+            $id = \CPrice::Add($price);
+
+            Container::instance()->newPriceIDs[$oldID] = $id;
         }
+        Container::instance()->trySaveContainer();
     }
 
+    /**
+     *
+     */
     public function execute()
     {
         $this->before();
@@ -148,13 +148,66 @@ class ImportPrices implements Importer {
     public function before()
     {
         $this->elementsNewIDs = Container::instance()->getNewProductsIDs();
-        $this->pricesPath = $this->importPath . '/prices/';
         $this->importPriceTypes();
-        $this->getFilesList();
     }
 
     public function after()
     {
 
+    }
+
+    /**
+     * @param $oldID
+     *
+     * @return bool
+     */
+    private function isLoaded($oldID)
+    {
+        $newPriceIDs = Container::instance()->newPriceIDs;
+
+        return in_array($oldID, array_keys($newPriceIDs));
+    }
+
+    /**
+     * @param $price
+     *
+     * @return mixed
+     */
+    private function productPriceExists($price)
+    {
+        return \CPrice::getList([], [
+            'PRODUCT_ID'       => $price['PRODUCT_ID'],
+            'PRICE'            => $price['PRICE'],
+            'CATALOG_GROUP_ID' => $price['CATALOG_GROUP_ID']
+        ])->Fetch()['ID'];
+    }
+
+    /**
+     * @param $itemPrices
+     * @param $diff
+     *
+     * @return array
+     */
+    private function changeRelationIDs($itemPrices)
+    {
+        $diff = [
+            'ID'         => '',
+            'CAN_BUY'    => '',
+            'CAN_ACCESS' => ''
+        ];
+        $itemPrices = array_map(function ($price) use ($diff) {
+
+            $clearFields = array_diff_key($price, $diff);
+
+            if (!$changedFields = $this->changeProductAndGroupID($clearFields)) {
+                return false;
+            };
+            $changedFields = array_replace_recursive($this->default, $changedFields);
+
+            return $changedFields;
+
+        }, $itemPrices);
+
+        return $itemPrices;
     }
 }

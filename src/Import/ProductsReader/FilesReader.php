@@ -3,15 +3,17 @@
 namespace BitrixMigration\Import\ProductsReader;
 
 use BitrixMigration\BitrixMigrationHelper;
+use BitrixMigration\Import\Container;
 use BitrixMigration\JsonReader;
 
 class FilesReader implements DevidedFilesInterface {
-    public $folder = '/orders/';
+    public $folder = '';
     use BitrixMigrationHelper, JsonReader;
     public $Elements = [];
     public $readedChunks;
     public $counter = 0;
     public $currentFile;
+    public $import_path;
     private $filesPath;
 
     public $loadedIDs = [];
@@ -34,9 +36,8 @@ class FilesReader implements DevidedFilesInterface {
     public function getNextElement()
     {
         if (count($this->Elements) && $nextElement = next($this->Elements)) {
-
             if ($this->isLoaded($nextElement['ID'])) {
-                echo "\rpass ".$nextElement['ID'];
+                echo "\rpass ".$nextElement['ID'] . ' file: '.$this->currentFile;
                 $this->counter++;
                 $nextElement = null;
 
@@ -63,14 +64,13 @@ class FilesReader implements DevidedFilesInterface {
      */
     private function getNextChunk()
     {
-        unset($this->Elements);
+        echo "\n";
+        $this->Elements = [];
         $path = $this->filesPath;
         $files = $this->scanDir($path);
 
 
-
         foreach ($files as $file) {
-
             if (!$this->isReaded($file)) {
                 $this->readedChunks[] = $file;
                 $this->currentFile = $file;
@@ -106,5 +106,9 @@ class FilesReader implements DevidedFilesInterface {
     {
         $res = in_array($ID, $this->loadedIDs);
         return $res;
+    }
+    public function setLoadedIDS($list)
+    {
+        $this->loadedIDs = $list;
     }
 }
