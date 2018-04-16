@@ -31,6 +31,8 @@ class Container {
      */
     protected static $instance;
     public $import_path;
+    public $newOrderProprtyIDs;
+    public $newOrdersIDs;
 
     static function init()
     {
@@ -226,6 +228,26 @@ class Container {
     public function addNewPriceID($oldID, $newID)
     {
         $this->newPriceIDs[$oldID] = $newID;
+        $this->trySaveContainer();
+    }
+
+    /**
+     * @param $oldID
+     * @param $id
+     */
+    public function addOrderProperty($oldID, $id)
+    {
+        $this->newOrderProprtyIDs[$oldID] = $id;
+        $this->trySaveContainer();
+    }
+
+    /**
+     * @param $old
+     * @param $new
+     */
+    public function addNewOrderIDS($old, $new)
+    {
+        $this->newOrdersIDs[$old] = $new;
         $this->trySaveContainer();
     }
 

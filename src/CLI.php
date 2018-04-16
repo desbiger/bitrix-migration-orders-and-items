@@ -33,7 +33,9 @@ class CLI {
         $eta = round($rate * $left, 2);
         $elapsed = $now - $start_time;
         $memory = memory_get_usage();
-        $status_bar .= " remaining: " . number_format($eta) . " sec.  elapsed: " . number_format($elapsed) . " sec."." | memory usage: $memory".$string;
+        $memoryFormat = $memory / 1024 / 1024;
+
+        $status_bar .= " remaining: " . number_format($eta) . " sec.  elapsed: " . number_format($elapsed) . " sec."." | memory usage: $memoryFormat".$string;
         echo "$status_bar  ";
 //        flush();
         if ($done == $total) {

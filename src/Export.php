@@ -120,11 +120,11 @@ class Export {
         //        $this->dumpProducts($productsPerPage, $from);
         //        $this->dumpSections();
         //        $this->dumpSectionsUserFields();
-                $this->dumpPaySystems();
+//                $this->dumpPaySystems();
 //                $this->dumpPersonType();
-                $this->dumpDelivery();
+//                $this->dumpDelivery();
         //        $this->dumpUsers();
-//        $this->dumpOrders();
+        $this->dumpOrders();
 
         return $this;
     }
@@ -150,7 +150,8 @@ class Export {
     {
 
         mkdir($this->export_folder_path.'/orders');
-        $this->ExportOrders->getAll(5000, function ($list, $page) {
+
+        $this->ExportOrders->getAll(500, function ($list, $page) {
             $res = json_encode($list);
             file_put_contents($this->export_folder_path . $this->ordersJson . "_$page.json", $res);
         });

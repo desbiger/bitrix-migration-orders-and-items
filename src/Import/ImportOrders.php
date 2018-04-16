@@ -5,7 +5,6 @@ namespace BitrixMigration\Import;
 
 use BitrixMigration\BitrixMigrationHelper;
 use BitrixMigration\CLI;
-use BitrixMigration\Export\ExportProducts;
 use BitrixMigration\Import\Contracts\Importer;
 use BitrixMigration\Import\ProductsReader\Orders;
 use BitrixMigration\JsonReader;
@@ -44,12 +43,14 @@ class ImportOrders implements Importer {
         $importPath = Container::instance()->getImportPath();
         $reader = new Orders($importPath . '/orders', $importPath);
 
+
         while (list($element, $count, $counter, $file) = $reader->getNextElement()) {
+
+
             CLI::show_status($counter, $count, 30, ' | file: ' . $file);
-            $this->newOrderIDS[$element['ID']] = $this->createOrders($element);
+            $this->createOrders($element);
+
         }
-        Container::instance()->newOrdersIDs = $this->newOrderIDS;
-        Container::instance()->trySaveContainer();
 
     }
 
@@ -58,8 +59,25 @@ class ImportOrders implements Importer {
      */
     private function createOrders($user_orders)
     {
+
+        $oldID = $user_orders['ID'];
+        $newOrdersIDs = Container::instance()->newOrdersIDs;
+        if (in_array($oldID, array_keys($newOrdersIDs))) {
+            return false;
+        }
+
         $this->updateOrderData($user_orders);
-        $this->createOrder($user_orders);
+        $newOrderID = $this->createOrder($user_orders);
+        if (@$newOrderID) {
+            Container::instance()->addNewOrderIDS($oldID, $newOrderID);
+            $this->createOrderBasket($user_orders['PRODUCTS'], $newOrderID);
+            $this->addOrderProperties($newOrderID, $user_orders['DOP_PROPS']);
+
+            return;
+        }
+
+        echo 'Order ' . $user_orders['ID'] . ' not created,   ';
+
     }
 
     /**
@@ -94,12 +112,32 @@ class ImportOrders implements Importer {
     {
         global $APPLICATION;
         $orderObject = new \CSaleOrder();
-        unset($order['ID']);
-        $id = $orderObject->Add($order);
-        $this->createOrderBasket($order['PRODUCTS'], $id);
-        if ($ex = $APPLICATION->GetException())
-            echo $ex->GetString() . ' ' . $id;
 
+        unset($order['ID']);
+
+        $order['PERSON_TYPE_ID'] = Container::instance()->newPersonsTypeIDS[$order['PERSON_TYPE_ID']];
+        $order['DELIVERY_ID'] = Container::instance()->newDeliveryIDs[$order['DELIVERY_ID']];
+
+        unset($order['PRODUCTS']);
+        unset($order['PROPERTIES']);
+        unset($order['DOP_PROPS']);
+        unset($order['ACCOUNT_NUMBER']);
+
+        try{
+
+            $id = $orderObject->Add($order);
+        }catch(\Exception $e){
+            if($ex = $APPLICATION->GetException())
+                  $strError = $ex->GetString();
+            echo $strError;
+//            dd($order);
+        }
+
+
+        $order = null;
+        $orderObject = null;
+
+        return $id;
 
     }
 
@@ -113,6 +151,8 @@ class ImportOrders implements Importer {
             $product['ORDER_ID'] = $order_id;
             \CSaleBasket::Add($product);
         }
+
+        return;
     }
 
 
@@ -162,5 +202,57 @@ class ImportOrders implements Importer {
     public function after()
     {
         $this->orders = [];
+    }
+
+    private function addOrderProperties($newOrderID, $DOP_PROPS)
+    {
+        $default = [
+            'ORDER_ID'       => '',
+            'ORDER_PROPS_ID' => '',
+            'NAME'           => '',
+            'VALUE'          => '',
+            'CODE'           => '',
+        ];
+        foreach ($DOP_PROPS as $prop) {
+            $propID = $this->createOrderPropertyIfNotExists($prop);
+
+            $prop['ORDER_PROPS_ID'] = $propID;
+            $prop['ORDER_ID'] = $newOrderID;
+
+            $array_replace_recursive = array_replace_recursive($default, $prop);
+            $propValue = array_only($array_replace_recursive, array_keys($default));
+
+
+            \CSaleOrderPropsValue::Add($propValue);
+
+            $array_replace_recursive = null;
+            $propValue = null;
+        }
+        $prop = [];
+        $DOP_PROPS = [];
+        $default = [];
+
+        return;
+    }
+
+    /**
+     * @param $property
+     *
+     * @return mixed
+     */
+    private function createOrderPropertyIfNotExists($property)
+    {
+        if ($id = \CSaleOrderProps::GetList([], ['CODE' => $property['CODE']])->Fetch()['ID']) {
+            return $id;
+        }
+        $id = \CSaleOrder::add($property);
+
+        $container = Container::instance();
+        $container->addOrderProperty($property['ID'], $id);
+
+        $property = [];
+
+        return $id;
+
     }
 }

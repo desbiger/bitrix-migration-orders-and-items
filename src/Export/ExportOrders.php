@@ -3,10 +3,12 @@
 
 namespace BitrixMigration\Export;
 
+use BitrixMigration\BitrixMigrationHelper;
 use BitrixMigration\CLI;
 
 class ExportOrders {
 
+    use BitrixMigrationHelper;
     /**
      * ExportOrders constructor.
      */
@@ -28,6 +30,7 @@ class ExportOrders {
         while ($order = $orders->Fetch()) {
             $order['PRODUCTS'] = $this->getOrderProducts($order['ID']);
             $order['PROPERTIES'] = $this->getOrderProps($order['ID']);
+            $order['DOP_PROPS'] = $this->getDopOrderProps($order['ID']);
             $res[] = $order;
         }
 
@@ -44,22 +47,23 @@ class ExportOrders {
         $i = 0;
         while ($order = $orders->Fetch()) {
             $counterPerPage++;
-            CLI::show_status($i++, $count,30," | page: $page");
+            CLI::show_status($i++, $count, 30, " | page: $page");
             $order['PRODUCTS'] = $this->getOrderProducts($order['ID']);
             $order['PROPERTIES'] = $this->getOrderProps($order['ID']);
+            $order['DOP_PROPS'] = $this->getDopOrderProps($order['ID']);
             $res[] = $order;
 
             if ($counterPerPage == $perPage && $callback) {
                 $counterPerPage = 0;
-                $callback($res,$page);
+                $callback($res, $page);
                 $page++;
                 $res = [];
             }
 
         }
 
-        if($callback){
-            $callback($res,$page);
+        if ($callback) {
+            $callback($res, $page);
         }
 
         return $res;
@@ -108,4 +112,10 @@ class ExportOrders {
 
         return $orders;
     }
+
+    private function getDopOrderProps($ID)
+    {
+        return $this->FetchAll(\CSaleOrderPropsValue::GetOrderProps($ID));
+    }
+
 }
