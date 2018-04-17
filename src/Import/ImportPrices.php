@@ -47,9 +47,7 @@ class ImportPrices implements Importer {
      */
     public function import()
     {
-        $importPath = Container::instance()->getImportPath();
-
-        $list = new Prices($importPath . '/prices', $importPath);
+        $list = new Prices();
 
         while (list($element, $count, $counter, $file) = $list->getNextElement()) {
 

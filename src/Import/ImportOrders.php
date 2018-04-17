@@ -41,8 +41,7 @@ class ImportOrders implements Importer {
     public function import()
     {
 
-        $importPath = Container::instance()->getImportPath();
-        $reader = new Orders($importPath . '/orders', $importPath);
+        $reader = new Orders();
 
 
         while (list($element, $count, $counter, $file) = $reader->getNextElement()) {

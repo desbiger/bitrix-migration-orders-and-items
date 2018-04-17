@@ -9,7 +9,7 @@ interface DevidedFilesInterface {
      *
      * @param $filesPath
      */
-    public function __construct($filesPath,$import_path);
+    public function __construct();
 
     /**
      * @return array|bool

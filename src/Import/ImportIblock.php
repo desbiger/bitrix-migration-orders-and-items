@@ -20,6 +20,10 @@ class ImportIblock implements Importer {
     public $catalogSettings;
     public $dataFile;
     public $siteID;
+    /**
+     * @var HelperManager
+     */
+    public $helper;
     private $data;
     private $import_path;
 

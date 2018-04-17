@@ -4,7 +4,9 @@
 namespace BitrixMigration\Import;
 
 
+use BitrixMigration\CLI;
 use BitrixMigration\Import\Contracts\Importer;
+use BitrixMigration\Import\ProductsReader\Sections;
 use BitrixMigration\JsonReader;
 use Sprint\Migration\HelperManager;
 
@@ -42,17 +44,6 @@ class ImportSections implements Importer {
         return $this;
     }
 
-    /**
-     * @param $ID
-     *
-     * @return mixed
-     */
-    public function GetNewIDByOldID($ID)
-    {
-        $xmlID = $this->xml_id[$ID];
-
-        return \CIBlockSection::GetList([], ['XML_ID' => $xmlID])->Fetch()['ID'];
-    }
 
     /**
      * @param $section
@@ -130,7 +121,10 @@ class ImportSections implements Importer {
 
     private function ImportSections()
     {
-        foreach ($this->sections as $section) {
+        $sections = new Sections();
+
+        while (list($section, $count, $counter, $file) = $sections->getNextElement()) {
+            CLI::show_status($counter, $count, 30, ' file: ' . $file);
             $this->createSectionIfNotExists($section);
             if (count($section['SUBSECTIONS'])) {
                 $this->createSubsections($section['SUBSECTIONS']);
@@ -169,7 +163,6 @@ class ImportSections implements Importer {
     public function before()
     {
         $this->iblock_id = Container::instance()->getNewIblock()->newIblockID;
-        $this->sections = $this->read('/sections/sections_1');
         $this->SectionUserFields = $this->read('/sections_uf');
 
         $this->replacedFields = [

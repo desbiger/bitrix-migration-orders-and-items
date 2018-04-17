@@ -52,7 +52,7 @@ class ImportProducts implements Importer {
     private function importCatalog()
     {
 
-        $reader = new Products($this->import_path . '/products', $this->import_path);
+        $reader = new Products();
 
         $list = Container::instance()->newProductsIDs;
 
