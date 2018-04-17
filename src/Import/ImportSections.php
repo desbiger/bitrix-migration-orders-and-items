@@ -14,6 +14,7 @@ class ImportSections implements Importer {
     public $newSectionIDS;
     public $replacedFields;
     public $SectionUserFields;
+    public $siteID;
     /**
      * @var mixed
      */
@@ -180,5 +181,10 @@ class ImportSections implements Importer {
     {
         $this->sections = [];
         $this->SectionUserFields = [];
+    }
+
+    public function setSiteID($id)
+    {
+        $this->siteID = $id;
     }
 }

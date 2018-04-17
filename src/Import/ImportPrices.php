@@ -17,6 +17,7 @@ class ImportPrices implements Importer {
     public $files;
     public $priceTypes;
     public $newPriceTypes;
+    public $siteID;
     private $importPath;
     private $elementsNewIDs;
 
@@ -209,5 +210,10 @@ class ImportPrices implements Importer {
         }, $itemPrices);
 
         return $itemPrices;
+    }
+
+    public function setSiteID($id)
+    {
+        $this->siteID = $id;
     }
 }

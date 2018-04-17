@@ -17,6 +17,7 @@ class ImportOrders implements Importer {
     public $newPersonsTypeIDS;
     public $newOrderPropsIDS;
     public $newPaySystemIDS;
+    public $siteID;
     use BitrixMigrationHelper, JsonReader;
 
     private $catalog_iblock_id;
@@ -254,5 +255,10 @@ class ImportOrders implements Importer {
 
         return $id;
 
+    }
+
+    public function setSiteID($id)
+    {
+        $this->siteID = $id;
     }
 }

@@ -19,6 +19,7 @@ class ImportIblock implements Importer {
     public $FilesPath;
     public $catalogSettings;
     public $dataFile;
+    public $siteID;
     private $data;
     private $import_path;
 
@@ -238,5 +239,10 @@ class ImportIblock implements Importer {
     public function getImportName()
     {
         return 'Import IBlock';
+    }
+
+    public function setSiteID($id)
+    {
+        $this->siteID = $id;
     }
 }

@@ -10,14 +10,15 @@ class Import {
 
     public $importCatalog;
     public $importers;
+    private $siteID;
 
 
     /**
      * @return Import
      */
-    static function init()
+    static function init($siteID)
     {
-        return new self();
+        return new self($siteID);
     }
 
     /**
@@ -25,9 +26,10 @@ class Import {
      *
      * @param $import_path
      */
-    public function __construct()
+    public function __construct($siteID)
     {
 
+        $this->siteID = $siteID;
     }
 
     /**

@@ -286,4 +286,9 @@ class ImportProducts implements Importer {
     {
         return 'Import IBlock Elements';
     }
+
+    public function setSiteID($id)
+    {
+        // TODO: Implement setSiteID() method.
+    }
 }
