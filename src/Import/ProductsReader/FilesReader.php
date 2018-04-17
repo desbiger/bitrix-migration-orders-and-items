@@ -42,7 +42,9 @@ class FilesReader implements DevidedFilesInterface {
      */
     public function getNextElement()
     {
-        if (count($this->Elements) && $nextElement = next($this->Elements)) {
+        $nextElement = $this->counter == 0 ? current($this->Elements) : next($this->Elements);
+
+        if (count($this->Elements) && $nextElement) {
             if ($this->isLoaded($nextElement['ID'])) {
                 echo "\rpass " . $nextElement['ID'] . ' file: ' . $this->currentFile;
                 $this->counter++;

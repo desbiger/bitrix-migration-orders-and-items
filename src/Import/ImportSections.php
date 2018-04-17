@@ -11,7 +11,7 @@ use BitrixMigration\JsonReader;
 use Sprint\Migration\HelperManager;
 
 class ImportSections implements Importer {
-    use JsonReader;
+    use JsonReader, SectionImportHelper;
     public $xml_id;
     public $newSectionIDS;
     public $replacedFields;
@@ -33,6 +33,14 @@ class ImportSections implements Importer {
 
     }
 
+    public function execute()
+    {
+        $this->before();
+        $this->import();
+        $this->after();
+
+    }
+
     /**
      * @return $this
      */
@@ -45,6 +53,20 @@ class ImportSections implements Importer {
     }
 
 
+    private function ImportSections()
+    {
+        $sections = new Sections();
+
+        while (list($section, $count, $counter, $file) = $sections->getNextElement()) {
+
+            CLI::show_status($counter, $count, 30, ' file: ' . $file);
+
+            $this->createSectionIfNotExists($section);
+            if (count($section['SUBSECTIONS'])) {
+                $this->createSubsections($section['SUBSECTIONS']);
+            }
+        }
+    }
     /**
      * @param $section
      *
@@ -91,49 +113,9 @@ class ImportSections implements Importer {
         }
     }
 
-    /**
-     * @param $section
-     *
-     * @return mixed
-     */
-    private function sectionExists($section)
-    {
-        return \CIBlockSection::GetList([], [
-            'IBLOCK_ID' => $this->iblock_id,
-            'XML_ID'    => $section['XML_ID']
-        ])->Fetch()['ID'];
-    }
 
     /**
-     * @param $section
-     *
-     * @return array
-     */
-    private function replaceFields($section, $replaces = null)
-    {
-        $section = array_replace_recursive($section, $this->replacedFields);
-        if ($replaces) {
-            $section = array_replace_recursive($section, $replaces);
-        }
-
-        return $section;
-    }
-
-    private function ImportSections()
-    {
-        $sections = new Sections();
-
-        while (list($section, $count, $counter, $file) = $sections->getNextElement()) {
-            CLI::show_status($counter, $count, 30, ' file: ' . $file);
-            $this->createSectionIfNotExists($section);
-            if (count($section['SUBSECTIONS'])) {
-                $this->createSubsections($section['SUBSECTIONS']);
-            }
-        }
-    }
-
-    /**
-     *
+     * Импорт пользовательских полей разделов
      */
     private function ImportSectionsUserFields()
     {
@@ -144,13 +126,6 @@ class ImportSections implements Importer {
         }
     }
 
-    public function execute()
-    {
-        $this->before();
-        $this->import();
-        $this->after();
-        Container::instance()->setSectionImportResult($this->newSectionIDS);
-    }
 
     /**
      * @return string
@@ -160,6 +135,9 @@ class ImportSections implements Importer {
         return 'Import IBlockSections';
     }
 
+    /**
+     *
+     */
     public function before()
     {
         $this->iblock_id = Container::instance()->getNewIblock()->newIblockID;
@@ -170,10 +148,14 @@ class ImportSections implements Importer {
         ];
     }
 
+    /**
+     *
+     */
     public function after()
     {
         $this->sections = [];
         $this->SectionUserFields = [];
+        Container::instance()->setSectionImportResult($this->newSectionIDS);
     }
 
     public function setSiteID($id)
