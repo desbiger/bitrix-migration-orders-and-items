@@ -3,11 +3,13 @@
 namespace BitrixMigration\Import\ProductsReader;
 
 use BitrixMigration\BitrixMigrationHelper;
+use BitrixMigration\CLI;
 use BitrixMigration\Import\Container;
 use BitrixMigration\JsonReader;
 
 class FilesReader implements DevidedFilesInterface {
     public $folder = '';
+    public $arrayFinish = false;
     protected $containerIDsFieldName;
     use BitrixMigrationHelper, JsonReader;
     public $Elements = [];
@@ -39,28 +41,59 @@ class FilesReader implements DevidedFilesInterface {
 
     /**
      * @return array|bool
+     *
+     * возвращает массив вида
+     * [
+     *  Текущий элемент,
+     *  количество элементов текущего массива,
+     *  счетчик,
+     *  названияе файла,
+     *  ключ текущего элемента массива.
+     * ]
      */
     public function getNextElement()
     {
-        $nextElement = $this->counter == 0 ? current($this->Elements) : next($this->Elements);
 
-        if (count($this->Elements) && $nextElement) {
-            if ($this->isLoaded($nextElement['ID'])) {
-                echo "\rpass " . $nextElement['ID'] . ' file: ' . $this->currentFile;
-                $this->counter++;
-                $nextElement = null;
+        if (count($this->Elements) && !$this->arrayFinish) {
 
-                return $this->getNextElement();
+            $currentElement = current($this->Elements);
+
+            if ($this->isLoaded($currentElement['ID'])) {
+                return $this->passElement($currentElement);
             }
 
-            return [$nextElement, count($this->Elements), $this->counter++, $this->currentFile];
+            $currentElement = $this->updateElement($currentElement);
 
+            $return = [
+                $currentElement,
+                count($this->Elements),
+                $this->counter++,
+                $this->currentFile,
+                key($this->Elements)
+            ];
+
+            $currentElement = null;
+            $this->next();
+
+            return $return;
         }
 
 
         if ($this->getNextChunk()) {
 
             return $this->getNextElement();
+        }
+
+        return false;
+    }
+
+    /**
+     * @return array|bool
+     */
+    public function getNextFile()
+    {
+        if ($this->getNextChunk()) {
+            return $this->Elements;
         }
 
         return false;
@@ -78,17 +111,20 @@ class FilesReader implements DevidedFilesInterface {
         $path = $this->filesPath;
         $files = $this->scanDir($path);
 
-
         foreach ($files as $file) {
+
+            $file = str_replace(".json", '', $file);
+
             if (!$this->isReaded($file)) {
                 $this->readedChunks[] = $file;
                 $this->currentFile = $file;
                 $this->counter = 0;
                 $this->Elements = $this->read($this->folder . $file);
 
+                $this->arrayFinish = false;
+
                 return true;
             }
-
         }
 
         return false;
@@ -121,5 +157,38 @@ class FilesReader implements DevidedFilesInterface {
     public function setLoadedIDS($list)
     {
         $this->loadedIDs = $list;
+    }
+
+    /**
+     * Кастумизация обработки
+     *
+     * @param $nextElement
+     *
+     * @return mixed
+     */
+    public function updateElement($nextElement)
+    {
+        return $nextElement;
+    }
+
+    private function next()
+    {
+        if (!next($this->Elements))
+            $this->arrayFinish = true;
+    }
+
+    /**
+     * @param $currentElement
+     *
+     * @return array|bool
+     */
+    private function passElement(&$currentElement)
+    {
+        $this->counter++;
+        CLI::show_status($this->counter, count($this->Elements), 30, " | pass element ." . $currentElement['ID']);
+        $currentElement = null;
+        $this->next();
+
+        return $this->getNextElement();
     }
 }

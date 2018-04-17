@@ -53,12 +53,14 @@ trait BitrixMigrationHelper {
 
         $array_diff = array_diff($list, ['..', '.']);
         if ($without_extension) {
-            $array_diff = array_map(function ($file) {
-                return str_replace(".json", "", $file);
+            $array_diff = array_map(function ($file) use ($path) {
+                if (!is_dir($path . $file))
+                    return $file;
+                unset($file);
             }, $array_diff);
         }
 
-        return $array_diff;
+        return array_diff($array_diff, [null]);
     }
 
 

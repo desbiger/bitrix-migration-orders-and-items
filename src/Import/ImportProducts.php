@@ -10,7 +10,7 @@ use BitrixMigration\JsonReader;
 
 class ImportProducts implements Importer {
 
-    use BitrixMigrationHelper, JsonReader;
+    use BitrixMigrationHelper, JsonReader, MigrationFilesUploadHelper;
     public $iblockElement;
     public $exportProducts;
     public $readedChunks;
@@ -24,7 +24,7 @@ class ImportProducts implements Importer {
     private $import_path;
 
     public $newIds;
-    protected $PropertyLinkedItems;
+
 
     public function __construct()
     {
@@ -54,12 +54,8 @@ class ImportProducts implements Importer {
 
         $reader = new Products();
 
-        $list = Container::instance()->newProductsIDs;
-
-        $reader->setLoadedIDS(array_keys($list));
-
         echo "\n";
-        while (list($element, $count, $counter, $file) = $reader->getNextElement()) {
+        while (list($element, $count, $counter, $file, $key) = $reader->getNextElement()) {
 
             CLI::show_status($counter, $count, 30, ' | file: ' . $file);
             $newID = $this->createElementIfNotExist($element);
@@ -80,10 +76,6 @@ class ImportProducts implements Importer {
         if ($id = $this->exists($Element)) {
             return $id;
         }
-
-        $Element = collect($Element)->except(['PRICES', 'OFFERS'])->toArray();
-
-        $Element = $this->correctFieldsValues($Element);
 
         $id = $element->add($Element);
         if (!$id) {
@@ -107,140 +99,7 @@ class ImportProducts implements Importer {
         ])->Fetch()['ID'];
     }
 
-    /**
-     * @param $Element
-     *
-     * @return array
-     */
-    private function correctFieldsValues($Element)
-    {
 
-        $replace = [
-            'IBLOCK_ID'         => $this->newIblockID,
-            'IBLOCK_SECTION_ID' => Container::instance()->getSectionImportResult()[$Element['IBLOCK_SECTION_ID']],
-            'PREVIEW_PICTURE'   => $this->getFileArray($Element['PREVIEW_PICTURE']),
-            'DETAIL_PICTURE'    => $this->getFileArray($Element['DETAIL_PICTURE'])
-        ];
-
-        $Element = array_replace_recursive($Element, $replace);
-        $Element = $this->convertProperties($Element);
-
-        return $Element;
-    }
-
-    /**
-     * @param $type
-     * @param $item
-     *
-     * @return array|null
-     */
-    public function PrepareByPropertyType($type, $item)
-    {
-        switch ($type) {
-            case "F":
-                return $this->FileProperty($item);
-
-                break;
-            case "L":
-                return $this->ListProperty($item);
-
-                break;
-
-            case "E":
-                $this->PropertyLinkedItems[] = $item['VALUE'];
-
-                return null;
-                break;
-        }
-    }
-
-
-    /**
-     * @param $Element
-     */
-    private function convertProperties($Element)
-    {
-        $Element['PROPERTY_VALUES'] = array_map(function ($item) {
-            if ($item['VALUE']) {
-                if ($res = $this->PrepareByPropertyType($item['PROPERTY_TYPE'], $item))
-                    return $res;
-
-                return $item['VALUE'];
-            }
-        }, $Element['PROPS']);
-
-        unset($Element['PROPS']);
-
-        return $Element;
-    }
-
-    /**
-     * @param $oldID
-     *
-     * @return null
-     */
-    private function getFileArray($oldID)
-    {
-        if ($oldID) {
-            $path = $this->import_path . '/files' . $this->allFilesArray[$oldID];
-
-            return \CFile::MakeFileArray($path);
-        }
-
-        return null;
-    }
-
-    /**
-     * @param $oldID
-     *
-     * @return mixed
-     */
-    public function getNewPropertyID($oldID)
-    {
-        return $this->newIblock->newPropertyIDs[$oldID];
-    }
-
-    /**
-     * @param $item
-     *
-     * @return mixed
-     */
-    public function getListPropertyIDByValue($item)
-    {
-        return \CIBlockProperty::GetPropertyEnum($this->getNewPropertyID($item['ID']), [], ['XML_ID' => $item['VALUE_XML_ID'][0]])
-                               ->Fetch();
-    }
-
-    /**
-     * @param $item
-     *
-     * @return array|null
-     */
-    public function FileProperty($item)
-    {
-        if (is_array($item['VALUE'])) {
-            $res = [];
-            foreach ($item['VALUE'] as $picture) {
-                $res[] = $this->getFileArray($picture);
-            }
-
-            return $res;
-        }
-
-        return $this->getFileArray($item['VALUE']);
-    }
-
-    /**
-     * @param $item
-     *
-     * @return mixed
-     */
-    public function ListProperty($item)
-    {
-        $propValue = $this->getListPropertyIDByValue($item);
-
-        return $propValue['ID'];
-    }
 
     public function before()
     {
@@ -254,21 +113,6 @@ class ImportProducts implements Importer {
     public function after()
     {
         $this->allFilesArray = [];
-    }
-
-
-    /**
-     * Загрузка всех картинок
-     */
-    private function loadFiles()
-    {
-        $files = $this->scanDir($this->import_path . '/files');
-        foreach ($files as $file) {
-            $addArray = $this->read('/files/' . $file);
-            if (count($addArray))
-                $this->allFilesArray = $this->allFilesArray + $addArray;
-        }
-        $addArray = null;
     }
 
 
