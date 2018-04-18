@@ -18,10 +18,9 @@ class Exporter {
      *
      * @return $this
      */
-    public function register(\Exporter $object)
+    public function register(\BitrixMigration\Export\Contracts\Exporter $object)
     {
         $this->repo[] = $object;
-
         return $this;
     }
 

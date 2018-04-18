@@ -6,11 +6,12 @@ namespace BitrixMigration\Export;
 
 use BitrixMigration\BitrixMigrationHelper;
 use BitrixMigration\CLI;
+use BitrixMigration\Export\Contracts\Exporter;
+use BitrixMigration\Import\MigrationFilesUploadHelper;
 use BitrixMigration\JsonReader;
-use Exporter;
 
-class ExportIblock implements \Exporter {
-    use BitrixMigrationHelper, JsonReader;
+class ExportIblock implements Exporter {
+    use BitrixMigrationHelper, JsonReader, FilesSaveHelper;
 
     public $files = [];
     public $properties = [];
@@ -19,13 +20,16 @@ class ExportIblock implements \Exporter {
     public $iblockHasSKU;
     public $catalogSettings;
     public $SKUIblockID;
+    public $filesPath;
     private $iblock_id;
-    private $fileToSave = '/iblocks/iblock.json';
+    private $fileToSave = '/iblocks/iblock';
+    private $dirToSave = '/iblocks/';
 
     public function __construct($iblock_id)
     {
-
+        mkdir(container()->exportPath . $this->dirToSave, 0777);
         $this->iblock_id = $iblock_id;
+        $this->filesPath = container()->exportPath . '/files';
     }
 
     /**
@@ -133,11 +137,19 @@ class ExportIblock implements \Exporter {
      */
     public function execute()
     {
-        dd($this);
+        $res = json_encode($this);
+
+        file_put_contents(container()->getExportPath() . $this->fileToSave . "_" . $this->iblock_id . '.json', $res);
+
+        $this->copyFiles($this->getFiles());
+
+        return $this;
     }
 
     public function after()
     {
-        // TODO: Implement after() method.
+
     }
+
+
 }

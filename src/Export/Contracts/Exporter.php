@@ -1,5 +1,5 @@
 <?php
-
+namespace BitrixMigration\Export\Contracts;
 
 interface Exporter {
     /**

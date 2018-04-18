@@ -13,10 +13,11 @@ use BitrixMigration\Export\ExportPriceType;
 use BitrixMigration\Export\ExportProducts;
 use BitrixMigration\Export\ExportUserFields;
 use BitrixMigration\Export\ExportUsers;
+use BitrixMigration\Export\FilesSaveHelper;
 use Sprint\Migration\HelperManager;
 
 class Export {
-    use BitrixMigrationHelper;
+    use BitrixMigrationHelper, FilesSaveHelper;
 
     public $sections_dir = 'sections';
     public $ExportOrders;
@@ -194,18 +195,7 @@ class Export {
         $this->products_dir_name = $products_dir_name;
     }
 
-    /**
-     * Выгружаем список файлов с привязкой к ID файла
-     *
-     * @param $filesPath
-     */
-    protected function dumpFilesList()
-    {
 
-        file_put_contents($this->filesPath . $this->allFilesJson . '_' . $this->filesDumps . '.json', json_encode($this->allFiles));
-        $this->filesDumps++;
-        $this->allFiles = [];
-    }
 
     /**
      * Копируем файлы во временную папку
