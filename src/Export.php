@@ -16,6 +16,8 @@ use BitrixMigration\Export\ExportUsers;
 use Sprint\Migration\HelperManager;
 
 class Export {
+    use BitrixMigrationHelper;
+
     public $sections_dir = 'sections';
     public $ExportOrders;
     public $paySystem = '/paySystem.json';
@@ -115,15 +117,15 @@ class Export {
      */
     public function export($productsPerPage = 1000, $from = 0)
     {
-        //        $this->dumpPriceTypes();
-        //        $this->dumpIblock();
-        //        $this->dumpProducts($productsPerPage, $from);
-        //        $this->dumpSections();
-        //        $this->dumpSectionsUserFields();
-//                $this->dumpPaySystems();
-//                $this->dumpPersonType();
-//                $this->dumpDelivery();
-        //        $this->dumpUsers();
+        $this->dumpPriceTypes();
+        $this->dumpIblock();
+        $this->dumpProducts($productsPerPage, $from);
+        $this->dumpSections();
+        $this->dumpSectionsUserFields();
+        $this->dumpPaySystems();
+        $this->dumpPersonType();
+        $this->dumpDelivery();
+        $this->dumpUsers();
         $this->dumpOrders();
 
         return $this;
@@ -149,7 +151,7 @@ class Export {
     public function dumpOrders()
     {
 
-        mkdir($this->export_folder_path.'/orders');
+        mkdir($this->export_folder_path . '/orders');
 
         $this->ExportOrders->getAll(500, function ($list, $page) {
             $res = json_encode($list);
@@ -210,17 +212,18 @@ class Export {
      *
      * @param $files
      */
-    public function copyFiles($files)
+    public function copyFiles($files, $path = null)
     {
         $i = 0;
         $total = count($files);
         $this->allFiles = $files;
+        $path = $path ?: $this->filesPath;
 
         foreach ($files as $id => $file) {
             CLI::show_status($i++, $total, 30, ' | copy files');
-            $newImgDir = $this->filesPath . dirname($file);
+            $newImgDir = $path . dirname($file);
             mkdir($newImgDir, 0777, true);
-            copy($_SERVER['DOCUMENT_ROOT'] . $file, $this->filesPath . $file);
+            copy($_SERVER['DOCUMENT_ROOT'] . $file, $path . $file);
         }
 
         $this->dumpFilesList();

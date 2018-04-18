@@ -6,7 +6,7 @@ namespace BitrixMigration\Export;
 
 use BitrixMigration\BitrixMigrationHelper;
 
-class ExportDelivery {
+class ExportDelivery  {
 
     use BitrixMigrationHelper;
 

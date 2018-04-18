@@ -6,9 +6,11 @@ namespace BitrixMigration\Export;
 
 use BitrixMigration\BitrixMigrationHelper;
 use BitrixMigration\CLI;
+use BitrixMigration\JsonReader;
+use Exporter;
 
-class ExportIblock {
-    use BitrixMigrationHelper;
+class ExportIblock implements \Exporter {
+    use BitrixMigrationHelper, JsonReader;
 
     public $files = [];
     public $properties = [];
@@ -18,14 +20,12 @@ class ExportIblock {
     public $catalogSettings;
     public $SKUIblockID;
     private $iblock_id;
+    private $fileToSave = '/iblocks/iblock.json';
 
     public function __construct($iblock_id)
     {
 
         $this->iblock_id = $iblock_id;
-        $this->exportProperties();
-        $this->getIblockSettings();
-        $this->isHasSKU();
     }
 
     /**
@@ -109,10 +109,35 @@ class ExportIblock {
         if ($res = \CCatalog::GetByID($this->iblock_id)) {
             $this->catalogSettings = $res;
             $this->SKUIblockID = $res['PRODUCT_IBLOCK_ID'];
+
             return true;
         };
 
         return false;
     }
 
+    /**
+     * @return $this;
+     */
+    public function before()
+    {
+        $this->exportProperties();
+        $this->getIblockSettings();
+        $this->isHasSKU();
+
+        return $this;
+    }
+
+    /**
+     * @return $this
+     */
+    public function execute()
+    {
+        dd($this);
+    }
+
+    public function after()
+    {
+        // TODO: Implement after() method.
+    }
 }

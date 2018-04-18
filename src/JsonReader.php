@@ -20,4 +20,16 @@ trait JsonReader {
         return (array)json_decode(file_get_contents($importPath . "/$string.json"), true);
 
     }
+
+    /**
+     * @param $data
+     * @param $fileName
+     */
+    public function saveJson($data, $fileName)
+    {
+        $exportPath = Container::instance()->getExportPath();
+
+        file_put_contents($exportPath . '/' . $fileName, json_encode($data));
+    }
+
 }

@@ -63,5 +63,4 @@ trait BitrixMigrationHelper {
         return array_diff($array_diff, [null]);
     }
 
-
 }

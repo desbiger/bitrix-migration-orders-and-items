@@ -33,6 +33,7 @@ class Container {
     public $import_path;
     public $newOrderProprtyIDs;
     public $newOrdersIDs;
+    public $exportPath;
 
     static function init()
     {
@@ -249,6 +250,19 @@ class Container {
     {
         $this->newOrdersIDs[$old] = $new;
         $this->trySaveContainer();
+    }
+
+    public function getExportPath()
+    {
+        return $this->exportPath;
+    }
+
+    /**
+     * @param mixed $exportPath
+     */
+    public function setExportPath($exportPath)
+    {
+        $this->exportPath = $exportPath;
     }
 
 }
