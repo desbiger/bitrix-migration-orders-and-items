@@ -23,10 +23,11 @@ trait FilesSaveHelper {
         $this->allFiles = $files;
         $path = $path ?: $this->filesPath();
 
+        echo "\n";
 
         foreach ($files as $id => $file) {
+            echo "\r copy files " . $this->indicator($total, $i++) . " | current file: $file";
 
-            CLI::show_status($i++, $total, 30, ' | copy files');
             $newImgDir = $path . dirname($file);
             mkdir($newImgDir, 0777, true);
 
@@ -34,7 +35,16 @@ trait FilesSaveHelper {
         }
 
         $this->dumpFilesList();
+        echo "\n";
     }
+
+    public function indicator($total, $current)
+    {
+        $procent = round($current / ($total / 100));
+
+        return $procent . "%";
+    }
+
 
     /**
      * Выгружаем список файлов с привязкой к ID файла

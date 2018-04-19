@@ -19,7 +19,6 @@ trait BitrixMigrationHelper {
         foreach ($keys as $key) {
             $fields[$key] = $array[$key];
         }
-
         return $fields;
     }
 

@@ -18,6 +18,7 @@ class ExportProducts implements Exporter {
     public $products_dir_name = '/products/';
     public $from;
     public $prices;
+    public $exportPath;
     /**
      * Массив переносимых файлов формата ID => путь
      * @var array
@@ -64,9 +65,23 @@ class ExportProducts implements Exporter {
      *
      * @param $iblock_id
      */
+    private $propertyKeys;
+
     public function __construct($iblock_id, $perPage, $from)
     {
+        $this->propertyKeys = [
+            'ID',
+            'NAME',
+            'VALUE',
+            'CODE',
+            'PROPERTY_TYPE',
+            'LINK_IBLOCK_ID',
+            'DESCRIPTION',
+            'SEARCHABLE',
+            'PROPERTY_VALUE_ID'
+        ];
 
+        $this->exportPath = container()->exportPath;
         $this->iblock_id = $iblock_id;
         $this->IblockProperties = $this->getIblockProperties();
         $this->CatalogPrices = ExportPrices::init($this->iblock_id);
@@ -83,9 +98,6 @@ class ExportProducts implements Exporter {
     {
         $this->iblock_id = $iblock_id;
     }
-
-
-
 
 
     /**
@@ -108,7 +120,7 @@ class ExportProducts implements Exporter {
 
             $i++;
 
-            CLI::show_status($page * $chunks + $i, $count);
+            CLI::show_status(($page - 1) * $chunks + $i, $count);
 
             if (($i + ($page * $chunks)) < $from) {
                 if ($i == $chunks) {
@@ -123,20 +135,20 @@ class ExportProducts implements Exporter {
 
             $fields = $this->arrayOnly($item->getFields(), $this->fields);
 
-            file_put_contents(realpath($_SERVER['DOCUMENT_ROOT']) . '/import_export/log.log', $fields['ID']);
+            file_put_contents($this->exportPath . '/log.log', $fields['ID']);
 
 
             $props = $item->getProperties();
 
             $this->dumpPropertyFiles($props);
 
-            $fields['PROPS'] = $props;
-            $fields['OFFERS'] = $this->getOffers($fields['ID']);
-
+            $fields['PROPS'] = $this->arrayOnly($props, $this->propertyKeys);
+            //            $fields['OFFERS'] = $this->getOffers($fields['ID']);
 
             $this->dumpFiles($fields);
 
             $items[] = $fields;
+            unset($fields, $props);
         }
 
         $callback($items, $page, $this->files);
@@ -175,6 +187,7 @@ class ExportProducts implements Exporter {
             $i = 0;
             if ($callback($items, $page, $this->files) === false)
                 return false;
+
             $this->files = [];
             $page++;
             $items = [];
@@ -274,15 +287,22 @@ class ExportProducts implements Exporter {
     public function execute()
     {
         $this->getAllProducts(function ($result, $iterarion, $files) {
-
+            echo "\n";
             foreach ($result as $key => $item) {
-                CLI::show_status($key + 1, count($result));
-                $this->prices[$item['ID']] = (new ExportPrices($this->iblock_id))->getPrices($item['ID']);
+
+                $exportPrices = new ExportPrices($this->iblock_id);
+
+                $this->prices[$item['ID']] = $exportPrices->getPrices($item['ID']);
+
+                unset($exportPrices);
+
+
+                CLI::show_status($key + 1, count($result), 30, " | Export Prices");
             }
-            //TODO сделать выгрузку  ком предложений $this->dumpOffers();
+
             $this->dumpPrices($iterarion);
 
-            file_put_contents(container()->exportPath . $this->products_dir_name . "/items_$iterarion.json", json_encode($result));
+            file_put_contents($this->exportPath . $this->products_dir_name . "/items_$iterarion.json", json_encode($result));
 
             $this->copyFiles($files);
 
