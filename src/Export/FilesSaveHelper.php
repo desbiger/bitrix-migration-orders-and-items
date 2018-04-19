@@ -8,6 +8,9 @@ use BitrixMigration\CLI;
 
 trait FilesSaveHelper {
 
+
+    private $filesDumps = 1;
+
     /**
      * Копируем файлы во временную папку
      *
@@ -18,12 +21,15 @@ trait FilesSaveHelper {
         $i = 0;
         $total = count($files);
         $this->allFiles = $files;
-        $path = $path ?: $this->filesPath;
+        $path = $path ?: $this->filesPath();
+
 
         foreach ($files as $id => $file) {
+
             CLI::show_status($i++, $total, 30, ' | copy files');
             $newImgDir = $path . dirname($file);
             mkdir($newImgDir, 0777, true);
+
             copy($_SERVER['DOCUMENT_ROOT'] . $file, $path . $file);
         }
 
@@ -37,9 +43,17 @@ trait FilesSaveHelper {
      */
     protected function dumpFilesList()
     {
-        mkdir(container()->exportPath . '/files/', 0777);
-        file_put_contents($this->filesPath . $this->allFilesJson . '_' . $this->filesDumps . '.json', json_encode($this->allFiles));
+
+        $filesPath = $this->filesPath();
+
+        mkdir($filesPath, 0777);
+        file_put_contents($filesPath . 'allFiles_' . $this->filesDumps . '.json', json_encode($this->allFiles));
         $this->filesDumps++;
         $this->allFiles = [];
+    }
+
+    private function filesPath()
+    {
+        return container()->exportPath . '/files/';
     }
 }

@@ -42,7 +42,7 @@ class Exporter {
      */
     public function export()
     {
-        /** @var \Exporter $exporter */
+        /** @var \BitrixMigration\Export\Contracts\Exporter $exporter */
         foreach ($this->repo as $exporter) {
             $exporter->before()->execute()->after();
         }

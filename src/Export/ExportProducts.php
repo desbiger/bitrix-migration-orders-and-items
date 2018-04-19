@@ -4,9 +4,10 @@ namespace BitrixMigration\Export;
 
 use BitrixMigration\BitrixMigrationHelper;
 use BitrixMigration\CLI;
+use BitrixMigration\Export\Contracts\Exporter;
 
-class ExportProducts {
-    use BitrixMigrationHelper;
+class ExportProducts implements Exporter {
+    use BitrixMigrationHelper, FilesSaveHelper;
     /**
      * Id инфолока переноса
      * @var
@@ -14,6 +15,9 @@ class ExportProducts {
     public $iblock_id;
     public $IblockProperties;
     public $CatalogPrices;
+    public $products_dir_name = '/products/';
+    public $from;
+    public $prices;
     /**
      * Массив переносимых файлов формата ID => путь
      * @var array
@@ -49,6 +53,10 @@ class ExportProducts {
         'EXTERNAL_ID',
         'BP_PUBLISHED'
     ];
+    /**
+     * @var
+     */
+    private $perPage;
 
 
     /**
@@ -56,11 +64,14 @@ class ExportProducts {
      *
      * @param $iblock_id
      */
-    public function __construct($iblock_id)
+    public function __construct($iblock_id, $perPage, $from)
     {
+
         $this->iblock_id = $iblock_id;
         $this->IblockProperties = $this->getIblockProperties();
         $this->CatalogPrices = ExportPrices::init($this->iblock_id);
+        $this->perPage = $perPage;
+        $this->from = $from;
     }
 
     /**
@@ -73,61 +84,9 @@ class ExportProducts {
         $this->iblock_id = $iblock_id;
     }
 
-    /**
-     * Иерархический массив разделов инфоблока
-     * с выполнение колбэк функции каждые $iteration элементов
-     *
-     * @param $callback
-     * @param $chunks
-     */
-    public function getAllSections($callback, $chunks)
-    {
-        $res = [];
-        $i = 0;
-        $page = 1;
-        $sections = $this->getSection();
-        foreach ($sections as $section) {
-            $res[] = $section;
-            $i++;
-            if ($i == $chunks) {
-                $i = 0;
-                $callback($res, $page, $this->files);
-                $page++;
 
-                $res = [];
-            }
-        }
-        $callback($res, $page, $this->files);
-        $this->files = [];
-    }
 
-    /**
-     * Разделы инфоблока разбитые по иерархии
-     *
-     * @param null $section_id
-     *
-     * @return array
-     */
-    protected function getSection($section_id = null)
-    {
-        $list = \CIBlockSection::GetList([], [
-            'IBLOCK_ID'  => $this->iblock_id,
-            'SECTION_ID' => $section_id
-        ], null, ['UF_*']);
 
-        $sections = $this->FetchAll($list, function ($section) {
-            $this->dumpFiles($section);
-            $subsections = $this->getSection($section['ID']);
-
-            if (count($subsections))
-                $section['SUBSECTIONS'] = $subsections;
-
-            return $section;
-
-        });
-
-        return count($sections) ? $sections : false;
-    }
 
     /**
      * Массив всех элементов инфоблока
@@ -144,6 +103,8 @@ class ExportProducts {
         $i = 0;
         $page = 1;
         while ($item = $list->GetNextElement()) {
+            $props = [];
+            $fields = [];
 
             $i++;
 
@@ -295,4 +256,58 @@ class ExportProducts {
     }
 
 
+    /**
+     * @return $this;
+     */
+    public function before()
+    {
+        $productsPath = container()->exportPath . $this->products_dir_name;
+        $allFiles = [];
+        mkdir($productsPath);
+
+        return $this;
+    }
+
+    /**
+     * @return $this
+     */
+    public function execute()
+    {
+        $this->getAllProducts(function ($result, $iterarion, $files) {
+
+            foreach ($result as $key => $item) {
+                CLI::show_status($key + 1, count($result));
+                $this->prices[$item['ID']] = (new ExportPrices($this->iblock_id))->getPrices($item['ID']);
+            }
+            //TODO сделать выгрузку  ком предложений $this->dumpOffers();
+            $this->dumpPrices($iterarion);
+
+            file_put_contents(container()->exportPath . $this->products_dir_name . "/items_$iterarion.json", json_encode($result));
+
+            $this->copyFiles($files);
+
+        }, $this->perPage, $this->from);
+
+        return $this;
+
+    }
+
+    public function after()
+    {
+
+        $this->dumpFilesList();
+    }
+
+    /**
+     *
+     */
+    private function dumpPrices($iteration)
+    {
+
+        mkdir(container()->exportPath . "/prices");
+        $path = container()->exportPath . "/prices/prices_$iteration.json";
+
+        file_put_contents($path, json_encode($this->prices));
+        $this->prices = [];
+    }
 }
