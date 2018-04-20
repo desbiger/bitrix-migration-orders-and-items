@@ -2,14 +2,16 @@
 
 namespace BitrixMigration\Import;
 
+use BitrixMigration\BitrixMigrationHelper;
 use BitrixMigration\Import\Contracts\Importer;
+use BitrixMigration\Import\ProductsReader\Iblocks;
 use BitrixMigration\JsonReader;
 use Sprint\Migration\HelperManager;
 use \Bitrix\Highloadblock as HL;
 
 class ImportIblock implements Importer {
 
-    use JsonReader;
+    use JsonReader, BitrixMigrationHelper;
     public $settings;
     public $newIblockID;
     public $properties;
@@ -31,16 +33,16 @@ class ImportIblock implements Importer {
     {
         \CModule::IncludeModule('highloadblock');
         $this->dataFile = $data_file;
+        $this->import_path = Container::instance()->getImportPath();
+
     }
 
     public function before()
     {
-        $this->import_path = Container::instance()->getImportPath();
-
-        $this->data = $iblock = $this->read($this->dataFile);
         $this->catalogSettings = $this->data['catalogSettings'];
         $this->separate();
         $this->helper = new HelperManager();
+
     }
 
     public function after()
@@ -105,7 +107,8 @@ class ImportIblock implements Importer {
                 $property['LINK_IBLOCK_ID'] = $this->newIblockID;
 
 
-            $this->newPropertyIDs[$property['ID']] = $this->helper->Iblock()->addPropertyIfNotExists($this->newIblockID, $property);
+            $newPropertyID = $this->helper->Iblock()->addPropertyIfNotExists($this->newIblockID, $property);
+            Container::instance()->setNewPropertyIDs($property['ID'], $newPropertyID);
         }
     }
 
@@ -231,10 +234,15 @@ class ImportIblock implements Importer {
 
     public function execute()
     {
-        $this->before();
-        $this->createIBlock();
-        $this->after();
-        Container::instance()->setNewIblock($this);
+
+        $files = new Iblocks();
+
+        while ($iblock = $files->getNextFile()) {
+            $this->data = $iblock;
+            $this->before();
+            $this->createIBlock();
+            $this->after();
+        }
     }
 
     /**

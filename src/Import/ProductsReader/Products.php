@@ -60,7 +60,6 @@ class Products extends FilesReader {
         }, $Element['PROPS']);
 
         unset($Element['PROPS']);
-
         return $Element;
     }
 
@@ -139,6 +138,6 @@ class Products extends FilesReader {
      */
     public function getNewPropertyID($oldID)
     {
-        return $this->newIblock->newPropertyIDs[$oldID];
+        return Container::instance()->newPropertyIDs[$oldID];
     }
 }

@@ -140,7 +140,7 @@ class ImportSections implements Importer {
      */
     public function before()
     {
-        $this->iblock_id = Container::instance()->getNewIblock()->newIblockID;
+        $this->iblock_id = Container::instance()->getNewIblock();
         $this->SectionUserFields = $this->read('/sections_uf');
 
         $this->replacedFields = [

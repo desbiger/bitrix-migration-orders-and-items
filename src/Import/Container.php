@@ -8,6 +8,7 @@ class Container {
 
     public $newIblock;
 
+    public $newPropertyIDs;
     public $newPersonsTypeIDS;
     public $newOrderPropsIDS;
     public $newPaySystemIDS;
@@ -263,6 +264,15 @@ class Container {
     public function setExportPath($exportPath)
     {
         $this->exportPath = $exportPath;
+    }
+
+    /**
+     * @param mixed $newPropertyIDs
+     */
+    public function setNewPropertyIDs($oldID,$newPropertyIDs)
+    {
+        $this->newPropertyIDs[$oldID] = $newPropertyIDs;
+        $this->trySaveContainer();
     }
 
 }

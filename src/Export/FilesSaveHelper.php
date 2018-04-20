@@ -16,7 +16,7 @@ trait FilesSaveHelper {
      *
      * @param $files
      */
-    public function copyFiles($files, $path = null)
+    public function copyFiles($files, $path = null, $resave = true)
     {
         $i = 0;
         $total = count($files);

@@ -16,7 +16,6 @@ class ImportProducts implements Importer {
     public $readedChunks;
     public $OldFilesArray;
     public $newIblockID;
-    public $allFilesArray = [];
     /**
      * @var ImportIblock
      */

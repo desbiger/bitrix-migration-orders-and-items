@@ -78,7 +78,8 @@ class ExportProducts implements Exporter {
             'LINK_IBLOCK_ID',
             'DESCRIPTION',
             'SEARCHABLE',
-            'PROPERTY_VALUE_ID'
+            'PROPERTY_VALUE_ID',
+            'VALUE_XML_ID'
         ];
 
         $this->exportPath = container()->exportPath;
@@ -141,8 +142,9 @@ class ExportProducts implements Exporter {
             $props = $item->getProperties();
 
             $this->dumpPropertyFiles($props);
-
-            $fields['PROPS'] = $this->arrayOnly($props, $this->propertyKeys);
+            foreach ($props as $prop){
+                $fields['PROPS'][$prop['CODE']] = $this->arrayOnly($prop, $this->propertyKeys);
+            }
             //            $fields['OFFERS'] = $this->getOffers($fields['ID']);
 
             $this->dumpFiles($fields);
@@ -304,7 +306,7 @@ class ExportProducts implements Exporter {
 
             file_put_contents($this->exportPath . $this->products_dir_name . "/items_$iterarion.json", json_encode($result));
 
-            $this->copyFiles($files);
+            $this->copyFiles($files,null,false);
 
         }, $this->perPage, $this->from);
 
