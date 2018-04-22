@@ -21,15 +21,7 @@ class ImportPrices implements Importer {
     private $importPath;
     private $elementsNewIDs;
 
-    private $default = [
-        'PRODUCT_ID'       => '',
-        'CATALOG_GROUP_ID' => '',
-        'EXTRA_ID'         => '',
-        'PRICE'            => '',
-        'CURRENCY'         => '',
-        'QUANTITY_FROM'    => '',
-        'QUANTITY_TO'      => '',
-    ];
+
 
     /**
      * ImportPrices constructor.
@@ -50,9 +42,9 @@ class ImportPrices implements Importer {
         $list = new Prices();
 
         while (list($element, $count, $counter, $file) = $list->getNextElement()) {
-
             CLI::show_status($counter, count($count), 30, ' | Import prices | file: ' . $file);
             $this->addPriceIfNotExists($element);
+            dd('123');
         }
     }
 
@@ -65,34 +57,10 @@ class ImportPrices implements Importer {
     private function addPriceIfNotExists($itemPrices)
     {
 
-        $itemID = $itemPrices[0]['ID'];
-        $itemPrices = $this->changeRelationIDs($itemPrices);
-
+        $itemID = $itemPrices[0]['PRODUCT_ID'];
         $this->ProductAddPrices($itemID, $itemPrices);
     }
 
-    /**
-     * Заменяем ID товара на новосозданный
-     *
-     * @param $clearFields
-     *
-     * @return bool
-     */
-    private function changeProductAndGroupID($clearFields)
-    {
-        $container = Container::instance();
-
-        $newProductID = $container->newProductsIDs[$clearFields['PRODUCT_ID']];
-
-
-        if (!$newProductID)
-            return false;
-
-        $clearFields = array_replace_recursive($clearFields, ['PRODUCT_ID' => $newProductID]);
-        $clearFields = array_replace_recursive($clearFields, ['CATALOG_GROUP_ID' => $container->newPriceTypesIDs[$clearFields['CATALOG_GROUP_ID']]]);
-
-        return $clearFields;
-    }
 
     /**
      *
@@ -117,11 +85,15 @@ class ImportPrices implements Importer {
                 Container::instance()->newPriceIDs[$oldID] = $id;
                 continue;
             }
-            $price = array_diff_key($price, ['CATALOG_GROUP_NAME' => '', 'EXTRA_ID' => '']);
+            $CPrice = new \CPrice();
+            $id = $CPrice->Add($price);
 
-            $id = \CPrice::Add($price);
-
-            Container::instance()->newPriceIDs[$oldID] = $id;
+            if($id){
+                Container::instance()->newPriceIDs[$oldID] = $id;
+            }else{
+                dump($price);
+                dd('Ошибка добавления цены : '.$CPrice->LAST_ERROR);
+            }
         }
         Container::instance()->trySaveContainer();
     }
@@ -146,7 +118,6 @@ class ImportPrices implements Importer {
 
     public function before()
     {
-        $this->elementsNewIDs = Container::instance()->getNewProductsIDs();
         $this->importPriceTypes();
     }
 
@@ -179,35 +150,6 @@ class ImportPrices implements Importer {
             'PRICE'            => $price['PRICE'],
             'CATALOG_GROUP_ID' => $price['CATALOG_GROUP_ID']
         ])->Fetch()['ID'];
-    }
-
-    /**
-     * @param $itemPrices
-     * @param $diff
-     *
-     * @return array
-     */
-    private function changeRelationIDs($itemPrices)
-    {
-        $diff = [
-            'ID'         => '',
-            'CAN_BUY'    => '',
-            'CAN_ACCESS' => ''
-        ];
-        $itemPrices = array_map(function ($price) use ($diff) {
-
-            $clearFields = array_diff_key($price, $diff);
-
-            if (!$changedFields = $this->changeProductAndGroupID($clearFields)) {
-                return false;
-            };
-            $changedFields = array_replace_recursive($this->default, $changedFields);
-
-            return $changedFields;
-
-        }, $itemPrices);
-
-        return $itemPrices;
     }
 
     public function setSiteID($id)
