@@ -41,6 +41,7 @@ class Prices extends FilesReader {
     public function setNewIDs($element)
     {
         $element['PRODUCT_ID'] = Container::instance()->newProductsIDs[$element['PRODUCT_ID']];
+        $element['CATALOG_GROUP_ID'] = Container::instance()->newPriceTypesIDs[$element['CATALOG_GROUP_ID']];
 
         $array = array_replace_recursive($this->default, $element);
 

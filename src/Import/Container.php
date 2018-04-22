@@ -269,9 +269,18 @@ class Container {
     /**
      * @param mixed $newPropertyIDs
      */
-    public function setNewPropertyIDs($oldID,$newPropertyIDs)
+    public function setNewPropertyIDs($oldID, $newPropertyIDs)
     {
         $this->newPropertyIDs[$oldID] = $newPropertyIDs;
+        $this->trySaveContainer();
+    }
+
+    /**
+     * @param mixed $newPriceTypesIDs
+     */
+    public function setNewPriceTypesIDs($oldID, $newPriceTypesIDs)
+    {
+        $this->newPriceTypesIDs[$oldID] = $newPriceTypesIDs;
         $this->trySaveContainer();
     }
 

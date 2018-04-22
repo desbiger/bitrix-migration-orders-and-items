@@ -6,9 +6,11 @@ namespace BitrixMigration\Import;
 
 use BitrixMigration\BitrixMigrationHelper;
 use BitrixMigration\CLI;
+use BitrixMigration\Import\Contracts\Importer;
+use BitrixMigration\Import\ProductsReader\PriceTypes;
 use BitrixMigration\JsonReader;
 
-class ImportPriceType {
+class ImportPriceType implements Importer {
     use JsonReader, BitrixMigrationHelper, PriceHelper;
     public $data;
     public $newIDs;
@@ -19,11 +21,10 @@ class ImportPriceType {
      *
      * @param $import_path
      */
-    public function __construct($import_path)
+    public function __construct()
     {
         \CModule::IncludeModule('catalog');
-        $this->import_path = $import_path;
-        $this->loadTypes();
+        $this->import_path = Container::instance()->import_path;
     }
 
 
@@ -32,15 +33,14 @@ class ImportPriceType {
      */
     public function import()
     {
-        $i = 0;
+        $list = new PriceTypes();
 
-        foreach ($this->data as $type) {
-            CLI::show_status($i++, count($this->data));
-            $this->newIDs[$type['ID']] = $this->createPriceTypeIfNotExists($type);
+        while (list($element, $count, $counter) = $list->getNextElement()) {
+            $id = $this->createPriceTypeIfNotExists($element);
+            Container::instance()->setNewPriceTypesIDs($element['ID'], $id);
+
+            CLI::show_status($counter, $count,30,'  | import price Types');
         }
-
-        Container::instance()->newPriceTypesIDs = $this->newIDs;
-        Container::instance()->trySaveContainer();
 
         return $this;
     }
@@ -60,21 +60,32 @@ class ImportPriceType {
 
     }
 
+
+    public function setSiteID($id)
+    {
+        // TODO: Implement setSiteID() method.
+    }
+
+    public function execute()
+    {
+        $this->import();
+    }
+
     /**
-     *
+     * @return string
      */
-    private function loadTypes()
+    public function getImportName()
     {
-        echo "\n check loaded priceTypes";
-        foreach ($this->read('priceTypes') as $item) {
-            if (!$this->isLoaded($item))
-                $this->data[] = $item;
-        };
+        // TODO: Implement getImportName() method.
     }
 
-    private function isLoaded($item)
+    public function before()
     {
-        return in_array($item['ID'], array_keys(Container::instance()->newPriceTypesIDs));
+        // TODO: Implement before() method.
     }
 
+    public function after()
+    {
+        // TODO: Implement after() method.
+    }
 }

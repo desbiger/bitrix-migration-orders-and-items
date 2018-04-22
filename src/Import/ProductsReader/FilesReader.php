@@ -53,9 +53,7 @@ class FilesReader implements DevidedFilesInterface {
      */
     public function getNextElement()
     {
-
         if (count($this->Elements) && !$this->arrayFinish) {
-
             $currentElement = current($this->Elements);
 
             if ($this->isLoaded($currentElement['ID'])) {
@@ -114,13 +112,11 @@ class FilesReader implements DevidedFilesInterface {
         foreach ($files as $file) {
 
             $file = str_replace(".json", '', $file);
-
             if (!$this->isReaded($file)) {
                 $this->readedChunks[] = $file;
                 $this->currentFile = $file;
                 $this->counter = 0;
                 $this->Elements = $this->read($this->folder . $file);
-
                 $this->arrayFinish = false;
 
                 return true;

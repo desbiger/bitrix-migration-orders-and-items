@@ -22,7 +22,6 @@ class ImportPrices implements Importer {
     private $elementsNewIDs;
 
 
-
     /**
      * ImportPrices constructor.
      *
@@ -31,6 +30,7 @@ class ImportPrices implements Importer {
      */
     public function __construct()
     {
+        \CModule::IncludeModule('catalog');
         $this->importPath = Container::instance()->getImportPath();
     }
 
@@ -41,10 +41,9 @@ class ImportPrices implements Importer {
     {
         $list = new Prices();
 
-        while (list($element, $count, $counter, $file) = $list->getNextElement()) {
-            CLI::show_status($counter, count($count), 30, ' | Import prices | file: ' . $file);
+        while (list($element, $count, $counter, $file, $oldProductID) = $list->getNextElement()) {
             $this->addPriceIfNotExists($element);
-            dd('123');
+            CLI::show_status($counter, $count, 30, ' | Import prices | file: ' . $file);
         }
     }
 
@@ -88,11 +87,11 @@ class ImportPrices implements Importer {
             $CPrice = new \CPrice();
             $id = $CPrice->Add($price);
 
-            if($id){
+            if ($id) {
                 Container::instance()->newPriceIDs[$oldID] = $id;
-            }else{
+            } else {
                 dump($price);
-                dd('Ошибка добавления цены : '.$CPrice->LAST_ERROR);
+                dump('Ошибка добавления цены : ' . $CPrice->LAST_ERROR);
             }
         }
         Container::instance()->trySaveContainer();
@@ -118,7 +117,7 @@ class ImportPrices implements Importer {
 
     public function before()
     {
-        $this->importPriceTypes();
+
     }
 
     public function after()
