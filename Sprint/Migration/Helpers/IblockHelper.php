@@ -158,7 +158,7 @@ class IblockHelper extends Helper {
 
         $aIblock = $this->getIblock($fields['CODE'], $typeId);
         if ($aIblock) {
-            $this->makeIblockCatalogIfNotCatalog($aIblock, $catalogSettings);
+            $this->makeIblockCatalogIfNotCatalog($aIblock['ID'], $catalogSettings);
 
             return $aIblock['ID'];
         }
@@ -721,11 +721,21 @@ class IblockHelper extends Helper {
 
             \CModule::IncludeModule('catalog');
             $default = [
-                'IBLOCK_ID'     => $iblock_id,
-                'YANDEX_EXPORT' => '',
+                'IBLOCK_ID'         => $iblock_id,
             ];
 
-            $fields = array_replace_recursive($default, $catalogSettings);
+
+            $fields = array_replace_recursive($catalogSettings,$default);
+
+            $fields = collect($fields)->only([
+                'IBLOCK_ID',
+                'SUBSCRIPTION',
+                'YANDEX_EXPORT',
+                'VAT_ID',
+                'PRODUCT_IBLOCK_ID',
+                'SKU_PROPERTY_ID'
+            ])->toArray();
+
 
             return \CCatalog::Add($fields);
         }

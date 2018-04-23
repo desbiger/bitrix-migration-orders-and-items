@@ -69,7 +69,6 @@ class ImportIblock implements Importer {
     private function createIBlock()
     {
         $IBLOCK_TYPE_ID = $this->settings['IBLOCK_TYPE_ID'];
-
         $this->createIblockType($IBLOCK_TYPE_ID);
         $id = $this->helper->Iblock()->addIblockIfNotExists($this->settings, $this->catalogSettings);
         $this->newIblockID = $id;

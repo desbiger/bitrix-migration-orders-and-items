@@ -7,6 +7,7 @@ namespace BitrixMigration\Import;
 use BitrixMigration\CLI;
 use BitrixMigration\Import\Contracts\Importer;
 use BitrixMigration\Import\ProductsReader\Sections;
+use BitrixMigration\Import\ProductsReader\SectionUF;
 use BitrixMigration\JsonReader;
 use Sprint\Migration\HelperManager;
 
@@ -67,6 +68,7 @@ class ImportSections implements Importer {
             }
         }
     }
+
     /**
      * @param $section
      *
@@ -141,7 +143,8 @@ class ImportSections implements Importer {
     public function before()
     {
         $this->iblock_id = Container::instance()->getNewIblock();
-        $this->SectionUserFields = $this->read('/sections_uf');
+        $userFields = new SectionUF();
+        $this->SectionUserFields = $userFields->getNextFile();
 
         $this->replacedFields = [
             'IBLOCK_ID' => $this->iblock_id,
