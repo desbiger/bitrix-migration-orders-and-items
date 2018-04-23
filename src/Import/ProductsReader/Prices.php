@@ -7,7 +7,7 @@ use BitrixMigration\Import\Container;
 
 class Prices extends FilesReader {
     public $folder = '/prices/';
-    protected $containerIDsFieldName = 'newPriceIDs';
+//    protected $containerIDsFieldName = 'newPriceIDs';
 
     private $default = [
         'PRODUCT_ID'       => '',

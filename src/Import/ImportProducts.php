@@ -79,6 +79,7 @@ class ImportProducts implements Importer {
         $id = $element->add($Element);
         if (!$id) {
             echo $element->LAST_ERROR;
+            dd($Element);
         }
 
         return $id;

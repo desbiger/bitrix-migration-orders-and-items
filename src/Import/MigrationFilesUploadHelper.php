@@ -32,14 +32,19 @@ trait MigrationFilesUploadHelper {
      */
     protected function getFileArray($oldID)
     {
-        if(!$this->allFilesArray)
+        if (!$this->allFilesArray)
             $this->loadFiles();
         if ($oldID) {
             $pathFile = $this->allFilesArray[$oldID];
 
             $path = Container::instance()->import_path . '/files' . $pathFile;
 
-            return \CFile::MakeFileArray($path);
+            $makeFileArray = \CFile::MakeFileArray($path);
+
+            if ($makeFileArray['size'] == 0)
+                return null;
+
+            return $makeFileArray;
         }
 
         return null;

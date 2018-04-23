@@ -169,7 +169,7 @@ class FilesReader implements DevidedFilesInterface {
 
     private function next()
     {
-        if (!next($this->Elements))
+        if (next($this->Elements) === false)
             $this->arrayFinish = true;
     }
 

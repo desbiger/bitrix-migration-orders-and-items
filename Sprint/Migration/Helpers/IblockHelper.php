@@ -157,8 +157,8 @@ class IblockHelper extends Helper {
         }
 
         $aIblock = $this->getIblock($fields['CODE'], $typeId);
+
         if ($aIblock) {
-            $this->makeIblockCatalogIfNotCatalog($aIblock['ID'], $catalogSettings);
 
             return $aIblock['ID'];
         }
@@ -735,7 +735,6 @@ class IblockHelper extends Helper {
                 'PRODUCT_IBLOCK_ID',
                 'SKU_PROPERTY_ID'
             ])->toArray();
-
 
             return \CCatalog::Add($fields);
         }

@@ -42,7 +42,9 @@ class ImportPrices implements Importer {
         $list = new Prices();
 
         while (list($element, $count, $counter, $file, $oldProductID) = $list->getNextElement()) {
-            $this->addPriceIfNotExists($element);
+            if (count($element))
+                $this->addPriceIfNotExists($element);
+
             CLI::show_status($counter, $count, 30, ' | Import prices | file: ' . $file);
         }
     }
@@ -75,10 +77,6 @@ class ImportPrices implements Importer {
     private function ProductAddPrices($oldID, $itemPrices)
     {
         foreach ($itemPrices as $price) {
-            if (!$price) {
-                echo "\n" . $oldID . ' passed';
-                continue;
-            }
 
             if ($id = $this->productPriceExists($price)) {
                 Container::instance()->newPriceIDs[$oldID] = $id;
@@ -122,7 +120,7 @@ class ImportPrices implements Importer {
 
     public function after()
     {
-
+        $this->setDefaultRatio();
     }
 
     /**
@@ -155,4 +153,22 @@ class ImportPrices implements Importer {
     {
         $this->siteID = $id;
     }
+
+    /**
+     *
+     */
+    private function setDefaultRatio()
+    {
+        $count = count(Container::instance()->newProductsIDs);
+        $i = 1;
+        foreach (Container::instance()->newProductsIDs as $id) {
+            $arFields = [
+                'ID' => $id,
+                'AVAILABLE' => 'Y'
+            ];
+            \CCatalogProduct::Add($arFields);
+            CLI::show_status($i++, $count, 30, " product $id to catalog");
+        }
+    }
+
 }
